@@ -52,7 +52,11 @@ class GameObject:
 
 	def move(self, location):
 		"""Move the object to location"""
+		self.world.objects_map[self.location].remove(self)
+
 		self.location = location
+		self.world.objects_map[self.location].append(self)
+
 		self.on_moved()
 
 	def canfit(self, other):
@@ -82,7 +86,7 @@ class GameObject:
 			return False
 
 		if self.canfit(other):
-			other.location = None
+			other.move(None)
 			other.removeself()
 			self.contained.append(other)
 			other.container = self
@@ -98,7 +102,7 @@ class GameObject:
 		   
 		   Default behaviour is to place in world at current location."""
 		if other in self.contained:
-			other.location = [self.location[0], self.location[1]]
+			other.move(self.location)
 			other.container = None
 			self.contained.remove(other)
 
@@ -117,7 +121,7 @@ class GameObject:
 		for obj in self.contained:
 			self.remove(obj)
 		self.destroyed = True
-		self.location = None
+		self.move(None)
 
 		self.on_destroyed()
 	

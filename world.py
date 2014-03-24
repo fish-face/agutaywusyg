@@ -2,6 +2,7 @@
 
 import sys
 import pygame
+from collections import defaultdict
 
 from renderer import Renderer
 from map import Map
@@ -9,6 +10,7 @@ from map import Map
 class World:
 	def __init__(self, player):
 		self.objects = []
+		self.objects_map = defaultdict(list)
 		self.objectives = []
 		self.player = player
 		self.add_object(player)
@@ -24,6 +26,8 @@ class World:
 			return
 
 		self.objects.append(obj)
+		self.objects_map[obj.location].append(obj)
+
 		obj.world = self
 	
 	def remove_object(self, obj):
@@ -31,15 +35,17 @@ class World:
 			return
 
 		self.objects.remove(obj)
+		self.objects_map[obj.location].remove(obj)
 		obj.destroy()
 	
 	def add_objective(self, objective):
 		self.objectives.append(objective)
 	
-	def get_objects_at(self, location):
-		for obj in self.objects:
-			if obj.location == location:
-				yield obj
+	def get_objects_at(self, location, test=None):
+		if test is None:
+			return self.objects_map[location]
+		else:
+			return [obj for obj in self.objects_map[location] if test(obj)]
 	
 	def get_object_by_name(self, name):
 		for obj in self.objects:
@@ -49,9 +55,8 @@ class World:
 	def can_move_to(self, obj, location):
 		if self.map[location].block_move:
 			return False
-		for obj in self.objects:
-			if obj.block_move and obj.location == location:
-				return False
+		if self.get_objects_at(location, lambda o: o.block_move):
+			return False
 		return True
 
 	def win(self):
@@ -73,7 +78,7 @@ class World:
 				return
 
 			if e.type == pygame.KEYDOWN:
-				newloc = [self.player.location[0], self.player.location[1]]
+				newloc = list(self.player.location)
 				if e.key == pygame.K_LEFT or e.key == pygame.K_h:
 					newloc[0] -= 1
 				if e.key == pygame.K_RIGHT or e.key == pygame.K_l:
@@ -82,6 +87,7 @@ class World:
 					newloc[1] -= 1
 				if e.key == pygame.K_DOWN or e.key == pygame.K_j:
 					newloc[1] += 1
+				newloc = tuple(newloc)
 
 				if e.key == pygame.K_COMMA:
 					for obj in self.get_objects_at(self.player.location):
@@ -97,15 +103,9 @@ class World:
 					if self.can_move_to(self.player, newloc):
 						self.player.move(newloc)
 					else:
-						enemies = [obj for obj in self.get_objects_at(newloc) if obj.flag('hostile')]
+						enemies = self.get_objects_at(newloc, lambda o: o.flag('hostile'))
 						if enemies:
 							enemies[0].hit(self.player, 1)
-
-	def process_input(self):
-		input = raw_input('> ')
-		#self.interpreter.interpret(input)
-		if input == 'l':
-			self.player.location[0] += 1
 	
 	def describe(self, text):
 		print text
