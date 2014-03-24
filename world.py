@@ -9,6 +9,7 @@ from map import Map
 class World:
 	def __init__(self, player):
 		self.objects = []
+		self.objectives = []
 		self.player = player
 		self.add_object(player)
 
@@ -32,13 +33,25 @@ class World:
 		self.objects.remove(obj)
 		obj.destroy()
 	
+	def add_objective(self, objective):
+		self.objectives.append(objective)
+	
 	def get_objects_at(self, location):
 		for obj in self.objects:
 			if obj.location == location:
 				yield obj
+	
+	def get_object_by_name(self, name):
+		for obj in self.objects:
+			if obj.name == name:
+				return obj
 
 	def can_move_to(self, obj, location):
 		return not self.map[location].block_move
+
+	def win(self):
+		self.describe("You win!")
+		self.quitting = True
 	
 	def main_loop(self, screen):
 		while not self.quitting:
@@ -56,13 +69,13 @@ class World:
 
 			if e.type == pygame.KEYDOWN:
 				newloc = [self.player.location[0], self.player.location[1]]
-				if e.key == pygame.K_LEFT:
+				if e.key == pygame.K_LEFT or e.key == pygame.K_h:
 					newloc[0] -= 1
-				if e.key == pygame.K_RIGHT:
+				if e.key == pygame.K_RIGHT or e.key == pygame.K_l:
 					newloc[0] += 1
-				if e.key == pygame.K_UP:
+				if e.key == pygame.K_UP or e.key == pygame.K_k:
 					newloc[1] -= 1
-				if e.key == pygame.K_DOWN:
+				if e.key == pygame.K_DOWN or e.key == pygame.K_j:
 					newloc[1] += 1
 
 				if e.key == pygame.K_COMMA:

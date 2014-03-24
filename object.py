@@ -2,7 +2,7 @@
 
 class GameObject:
 	"""An object in the game world"""
-	def __init__(self, name, description='', location=None):
+	def __init__(self, name, description='', location=None, char='?'):
 		"""Create a new GameObject with the given name, description and location."""
 		self.name = name
 		self.description = description
@@ -10,7 +10,12 @@ class GameObject:
 		self.container = None
 		self.contained = []
 		self.tileindex = (0,0)
-		self.char = '?'
+		self.char = char
+
+		self.moved_cbs = []
+		self.added_cbs = []
+		self.removed_cbs = []
+		self.destroyed_cbs = []
 
 		if self.name[0].lower() in 'aeiou':
 			self.indef_article = 'an'
@@ -44,10 +49,17 @@ class GameObject:
 			other.location = None
 			other.removeself()
 			self.contained.append(other)
+			other.container = self
+
+			other.on_added()
 
 			return True
 		else:
 			raise NotImplemented
+	
+	def on_added(self):
+		for cb in self.added_cbs:
+			cb(self)
 	
 	def remove(self, other):
 		"""Remove other from me"""

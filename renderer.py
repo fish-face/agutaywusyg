@@ -7,7 +7,7 @@ class Renderer:
 		self.tile_width = 24
 		self.tile_height = 24
 		#self.tiles = Tileset("/home/fish/Pictures/M_BISON_YESSSSSSS.jpg", 24, 24)
-		self.tiles = AsciiTiles('Arial')
+		self.tiles = AsciiTiles('Deja Vu Sans Mono')
 
 	def render(self, surface, map, objects):
 		surface.fill((0,0,0))

@@ -9,6 +9,7 @@ from actor import *
 from object import GameObject
 from map import Map
 from renderer import Renderer
+from quest import MainQuest
 
 if __name__=='__main__':
 	pygame.init()
@@ -18,7 +19,9 @@ if __name__=='__main__':
 	#room = Room('start', 'A boring starting room')
 	player = Player('you', 'The Player', [1,1])
 	world = world.World(player)
-	world.add_object(GameObject('apple', 'A tasty apple', [1,2]))
+	world.add_object(GameObject('apple', 'A tasty apple', [1,2], char='%'))
+	world.add_object(GameObject('Amulet of Yendor', 'Pretty important', [8,3], char='"'))
+	world.add_objective(MainQuest(world))
 	world.main_loop(screen)
 
     #table = load_tile_table("/home/fish/Pictures/M_BISON_YESSSSSSS.jpg", 24, 16)
