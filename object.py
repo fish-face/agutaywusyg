@@ -9,8 +9,14 @@ class GameObject:
 		self.location = location
 		self.container = None
 		self.contained = []
+		self.destroyed = False
+		self.flags = {}
+		#TODO: There should probably be a better way of doing flags
+
 		self.tileindex = (0,0)
 		self.char = char
+		self.block_sight = False
+		self.block_move = False
 
 		self.moved_cbs = []
 		self.added_cbs = []
@@ -21,24 +27,54 @@ class GameObject:
 			self.indef_article = 'an'
 		else:
 			self.indef_article = 'a'
+		self.def_article = 'the'
+		self.prefer_definite = False
 
 	#TODO: something something locations vs containers
 	#TODO: No, really???
 	
 	def indefinite(self):
+		"""Name of the object with indefinite article"""
 		return '%s %s' % (self.indef_article, self.name)
+
+	def definite(self):
+		"""Name of the object with definite article"""
+		return '%s %s' % (self.def_article, self.name)
 
 	def describe(self):
 		"""Get a description of the object"""
 		return self.description
 
+	def flag(self, flag):
+		if flag not in self.flags or not self.flags[flag]:
+			return False
+		return True
+
 	def move(self, location):
 		"""Move the object to location"""
 		self.location = location
+		self.on_moved()
 
 	def canfit(self, other):
 		"""Can other fit inside me?"""
 		return True
+
+	def on_added(self):
+		for cb in self.added_cbs:
+			cb(self)
+
+	def on_removed(self):
+		for cb in self.removed_cbs:
+			cb(self)
+
+	def on_destroyed(self):
+		for cb in self.destroyed_cbs:
+			cb(self)
+
+	def on_moved(self):
+		for cb in self.moved_cbs:
+			cb(self)
+
 
 	def add(self, other):
 		"""Put other inside me, if possible."""
@@ -57,16 +93,16 @@ class GameObject:
 		else:
 			raise NotImplemented
 	
-	def on_added(self):
-		for cb in self.added_cbs:
-			cb(self)
-	
 	def remove(self, other):
-		"""Remove other from me"""
+		"""Remove other from me.
+		   
+		   Default behaviour is to place in world at current location."""
 		if other in self.contained:
 			other.location = [self.location[0], self.location[1]]
 			other.container = None
 			self.contained.remove(other)
+
+			other.on_removed()
 
 			return True
 	
@@ -76,10 +112,14 @@ class GameObject:
 			container.remove(self)
 	
 	def destroy(self):
-		#TODO if we get deleted, will there be references to 
+		#TODO if we get deleted, will there be references to us hanging around?
 		self.removeself()
 		for obj in self.contained:
 			self.remove(obj)
+		self.destroyed = True
+		self.location = None
+
+		self.on_destroyed()
 	
 	def __str__(self):
 		return self.name

@@ -20,7 +20,11 @@ if __name__=='__main__':
 	player = Player('you', 'The Player', [1,1])
 	world = world.World(player)
 	world.add_object(GameObject('apple', 'A tasty apple', [1,2], char='%'))
-	world.add_object(GameObject('Amulet of Yendor', 'Pretty important', [8,3], char='"'))
+	amulet = GameObject('Amulet of Yendor', 'Pretty important', [8,3], char='"')
+	rodney = Rodney(location=[8,3])
+	world.add_object(amulet)
+	rodney.add(amulet)
+	world.add_object(rodney)
 	world.add_objective(MainQuest(world))
 	world.main_loop(screen)
 

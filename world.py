@@ -47,7 +47,12 @@ class World:
 				return obj
 
 	def can_move_to(self, obj, location):
-		return not self.map[location].block_move
+		if self.map[location].block_move:
+			return False
+		for obj in self.objects:
+			if obj.block_move and obj.location == location:
+				return False
+		return True
 
 	def win(self):
 		self.describe("You win!")
@@ -88,8 +93,13 @@ class World:
 						if self.player.remove(obj):
 							self.describe('You drop %s' % obj.indefinite())
 
-				if self.can_move_to(self.player, newloc):
-					self.player.move(newloc)
+				if newloc != self.player.location:
+					if self.can_move_to(self.player, newloc):
+						self.player.move(newloc)
+					else:
+						enemies = [obj for obj in self.get_objects_at(newloc) if obj.flag('hostile')]
+						if enemies:
+							enemies[0].hit(self.player, 1)
 
 	def process_input(self):
 		input = raw_input('> ')
