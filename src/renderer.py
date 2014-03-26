@@ -4,18 +4,45 @@ import pygame
 
 class Renderer:
 	def __init__(self):
-		self.tile_width = 16
-		self.tile_height = 16
 		#self.tiles = Tileset("/home/fish/Pictures/M_BISON_YESSSSSSS.jpg", 24, 24)
+		self.view_w = 0.75
+		self.view_h = 0.75
 		self.tiles = AsciiTiles('Deja Vu Sans Mono')
+		self.centre = ()
 
-	def render(self, surface, level):
+	def render(self, surface, level, player):
+		# Calculate viewport
+		#TODO: receive surface in init?
+		w = surface.get_width()
+		h = surface.get_height()
+		#player_view = pygame.Rect(0, 0, self.view_w * self.tiles.tile_width,
+		#                                self.view_h * self.tiles.tile_height)
+		player_view = pygame.Rect(0, 0, self.view_w * w, self.view_w * h)
+		player_view.center = (player.location[0] * self.tiles.tile_width,
+		                      player.location[1] * self.tiles.tile_height)
+
+		if not self.centre:
+			self.centre = player_view.center
+
+		view = pygame.Rect(0, 0, w, h)
+		view.center = self.centre
+
+		#Centre view on player
+		if not view.contains(player_view):
+			view.left = min(view.left, player_view.left)
+			view.right = max(view.right, player_view.right)
+			view.top = min(view.top, player_view.top)
+			view.bottom = max(view.bottom, player_view.bottom)
+
+			self.centre = view.center
+
 		surface.fill((0,0,0))
 		#TODO: Render order!
 		for (x, y, tile) in level.get_tiles():
 			for thing in tile:
 				tile_image = self.tiles[thing]
-				surface.blit(tile_image, (x*self.tile_width, y*self.tile_height))
+				surface.blit(tile_image, (x*self.tiles.tile_width - view.left,
+				                          y*self.tiles.tile_height - view.top))
 
 		#for obj in objects:
 		#	if not obj.location: continue
@@ -26,6 +53,8 @@ class Renderer:
 
 class Tileset:
 	def __init__(self, filename, width, height):
+		self.tile_width = 12
+		self.tile_height = 12
 		self.load_tile_table(filename, width, height)
 
 	def load_tile_table(self, filename, width, height):
@@ -45,7 +74,10 @@ class Tileset:
 
 class AsciiTiles(Tileset):
 	def __init__(self, font):
-		self.font = pygame.font.SysFont(font, 18)
+		scale = 1/2.0
+		self.tile_width = 16 * scale
+		self.tile_height = 16 * scale
+		self.font = pygame.font.SysFont(font, int(20 * scale))
 		self.cache = {}
 
 	def __getitem__(self, thing):

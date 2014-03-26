@@ -17,6 +17,8 @@ class World:
 		self.level = VillageLevel(self)
 		self.level.add_object(player)
 
+		pygame.key.set_repeat(1, 50)
+
 		self.quitting = False
 		self.interpreter = CommandInterpreter(self)
 		self.renderer = Renderer()
@@ -69,7 +71,7 @@ class World:
 			self.clock.tick(15)
 			self.process_events()
 			self.update()
-			self.renderer.render(screen, self.level)
+			self.renderer.render(screen, self.level, self.player)
 			pygame.display.flip()
 	
 	def process_events(self):
@@ -99,6 +101,10 @@ class World:
 					for obj in self.player.contained:
 						if self.player.remove(obj):
 							self.describe('You drop %s' % obj.indefinite())
+
+				if e.key == pygame.K_r:
+					self.level.setup()
+					self.level.add_object(self.player)
 
 				if newloc != self.player.location:
 					if self.can_move_to(self.player, newloc):
