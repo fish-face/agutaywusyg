@@ -1,28 +1,28 @@
-### Renders a map to a pygame surface
+### Renders a level to a pygame surface
 
 import pygame
 
 class Renderer:
 	def __init__(self):
-		self.tile_width = 24
-		self.tile_height = 24
+		self.tile_width = 16
+		self.tile_height = 16
 		#self.tiles = Tileset("/home/fish/Pictures/M_BISON_YESSSSSSS.jpg", 24, 24)
 		self.tiles = AsciiTiles('Deja Vu Sans Mono')
 
-	def render(self, surface, map, objects):
+	def render(self, surface, level):
 		surface.fill((0,0,0))
-		#TODO: Passing all those lists in here sucks, especially for extensions
-		for (x, y, tile) in map.get_tiles():
-			tile_image = self.tiles[tile]
-			surface.blit(tile_image, (x*self.tile_width, y*self.tile_height))
-
 		#TODO: Render order!
-		for obj in objects:
-			if not obj.location: continue
+		for (x, y, tile) in level.get_tiles():
+			for thing in tile:
+				tile_image = self.tiles[thing]
+				surface.blit(tile_image, (x*self.tile_width, y*self.tile_height))
 
-			x, y = obj.location
-			obj_image = self.tiles[obj]
-			surface.blit(obj_image, (x*self.tile_width, y*self.tile_height))
+		#for obj in objects:
+		#	if not obj.location: continue
+
+		#	x, y = obj.location
+		#	obj_image = self.tiles[obj]
+		#	surface.blit(obj_image, (x*self.tile_width, y*self.tile_height))
 
 class Tileset:
 	def __init__(self, filename, width, height):
@@ -45,7 +45,7 @@ class Tileset:
 
 class AsciiTiles(Tileset):
 	def __init__(self, font):
-		self.font = pygame.font.SysFont(font, 21)
+		self.font = pygame.font.SysFont(font, 18)
 		self.cache = {}
 
 	def __getitem__(self, thing):

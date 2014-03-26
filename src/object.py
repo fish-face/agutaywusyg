@@ -7,6 +7,7 @@ class GameObject:
 		self.name = name
 		self.description = description
 		self.location = location
+		self.level = None
 		self.container = None
 		self.contained = []
 		self.destroyed = False
@@ -52,10 +53,12 @@ class GameObject:
 
 	def move(self, location):
 		"""Move the object to location"""
-		self.world.objects_map[self.location].remove(self)
+		#TODO: Moving between levels. (Don't forget to move contained objects)
+		#self.level[self.location].remove(self)
+		self.level.move_object(self, location)
 
 		self.location = location
-		self.world.objects_map[self.location].append(self)
+		#self.level[self.location].append(self)
 
 		self.on_moved()
 
@@ -102,9 +105,9 @@ class GameObject:
 		   
 		   Default behaviour is to place in world at current location."""
 		if other in self.contained:
-			other.move(self.location)
 			other.container = None
 			self.contained.remove(other)
+			other.move(self.location)
 
 			other.on_removed()
 

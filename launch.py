@@ -2,12 +2,15 @@
 
 import pygame
 import pygame.locals
+import sys
+import os
+
+sys.path.append(os.path.join('.', 'src'))
 
 import world
 from location import *
 from actor import *
 from object import GameObject
-from map import Map
 from renderer import Renderer
 from quest import MainQuest
 
@@ -19,13 +22,7 @@ if __name__=='__main__':
 	#room = Room('start', 'A boring starting room')
 	player = Player('you', 'The Player', (1,1))
 	world = world.World(player)
-	world.add_object(GameObject('apple', 'A tasty apple', (1,2), char='%'))
-	amulet = GameObject('Amulet of Yendor', 'Pretty important', (8,3), char='"')
-	rodney = Rodney(location=(8,3))
-	world.add_object(amulet)
-	rodney.add(amulet)
-	world.add_object(rodney)
-	world.add_objective(MainQuest(world))
+	#world.add_objective(MainQuest(world))
 	world.main_loop(screen)
 
     #table = load_tile_table("/home/fish/Pictures/M_BISON_YESSSSSSS.jpg", 24, 16)

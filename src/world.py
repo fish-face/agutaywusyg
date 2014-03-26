@@ -5,57 +5,58 @@ import pygame
 from collections import defaultdict
 
 from renderer import Renderer
-from map import Map
+from level import TestLevel, VillageLevel
 
 class World:
 	def __init__(self, player):
-		self.objects = []
-		self.objects_map = defaultdict(list)
+		#self.objects = []
+		#self.objects_map = defaultdict(list)
 		self.objectives = []
 		self.player = player
-		self.add_object(player)
+		#self.level = TestLevel(self)
+		self.level = VillageLevel(self)
+		self.level.add_object(player)
 
 		self.quitting = False
 		self.interpreter = CommandInterpreter(self)
-		self.map = Map()
 		self.renderer = Renderer()
 		self.clock = pygame.time.Clock()
 
-	def add_object(self, obj):
-		if obj in self.objects:
-			return
+	#def add_object(self, obj):
+	#	if obj in self.objects:
+	#		return
 
-		self.objects.append(obj)
-		self.objects_map[obj.location].append(obj)
+	#	self.objects.append(obj)
+	#	self.objects_map[obj.location].append(obj)
 
-		obj.world = self
-	
-	def remove_object(self, obj):
-		if obj not in self.objects:
-			return
+	#	obj.world = self
+	#
+	#def remove_object(self, obj):
+	#	if obj not in self.objects:
+	#		return
 
-		self.objects.remove(obj)
-		self.objects_map[obj.location].remove(obj)
-		obj.destroy()
+	#	self.objects.remove(obj)
+	#	self.objects_map[obj.location].remove(obj)
+	#	obj.destroy()
 	
 	def add_objective(self, objective):
 		self.objectives.append(objective)
 	
 	def get_objects_at(self, location, test=None):
+		#First item at a location is always terrain
 		if test is None:
-			return self.objects_map[location]
+			return self.level[location][1:]
 		else:
-			return [obj for obj in self.objects_map[location] if test(obj)]
+			return [obj for obj in self.level[location][1:] if test(obj)]
 	
 	def get_object_by_name(self, name):
-		for obj in self.objects:
+		#TODO this should not just work on the current level
+		for obj in self.level.objects:
 			if obj.name == name:
 				return obj
 
 	def can_move_to(self, obj, location):
-		if self.map[location].block_move:
-			return False
-		if self.get_objects_at(location, lambda o: o.block_move):
+		if [1 for x in self.level[location] if x.block_move]:
 			return False
 		return True
 
@@ -68,7 +69,7 @@ class World:
 			self.clock.tick(15)
 			self.process_events()
 			self.update()
-			self.renderer.render(screen, self.map, self.objects)
+			self.renderer.render(screen, self.level)
 			pygame.display.flip()
 	
 	def process_events(self):
