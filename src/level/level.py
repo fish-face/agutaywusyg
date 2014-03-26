@@ -1,6 +1,8 @@
 #encoding=utf-8
 ### Levels define the terrain making up an area
 
+from constants import *
+
 TEST_LEVEL = (
 		"##########",
 		"#....#...#",
@@ -31,19 +33,20 @@ class Level:
 		self.world = world
 
 		self.terraintypes = TERRAINS
-		self.objects = []
-		self.map = [[[]]]
 		self.setup()
 		self.compute_height()
 	
 	def setup(self):
-		pass
+		self.objects = []
+		self.map = []
 
 	def compute_height(self):
 		self.height = len(self.map)
 		self.width = len(self.map[0])
 	
 	def set_terrain(self, p, terrain):
+		if p[0] < 0 or p[1] < 0:
+			return
 		try:
 			if self.map[p[1]][p[0]]:
 				self.map[p[1]][p[0]][0] = terrain
@@ -114,6 +117,28 @@ class Level:
 		if rev:
 			points.reverse()
 		return points
+
+	def get_square(self, x1, y1, x2, y2):
+		if y1 > y2:
+			y1, y2 = y2, y1
+		if x1 > x2:
+			x1, x2 = x2, x1
+		return [(x,y) for x in xrange(x1,x2+1) for y in xrange(y1,y2+1)]
+
+	def draw_square(self, x1, y1, x2, y2, terrain):
+		for p in self.get_square(x1, y1, x2, y2):
+			self.set_terrain(p, terrain)
+
+	def coords_in_dir(self, x, y, d, l):
+		"""Return coordinates offset by l in cardinal direction d"""
+		if d == RIGHT:
+			return (x + l, y)
+		elif d == UP:
+			return (x, y - l)
+		elif d == LEFT:
+			return (x - l, y)
+		elif d == DOWN:
+			return (x, y + l)
 
 	def add_object(self, obj):
 		if obj in self.objects:
