@@ -106,6 +106,9 @@ class World:
 					self.level.setup()
 					self.level.add_object(self.player)
 
+				if e.key == pygame.K_0:
+					self.renderer.tiles.scale = 1
+
 				if newloc != self.player.location:
 					if self.can_move_to(self.player, newloc):
 						self.player.move(newloc)
@@ -113,6 +116,12 @@ class World:
 						enemies = self.get_objects_at(newloc, lambda o: o.flag('hostile'))
 						if enemies:
 							enemies[0].hit(self.player, 1)
+
+			if e.type == pygame.MOUSEBUTTONUP:
+				if e.button == 4:
+					self.renderer.tiles.scale *= 1.1
+				elif e.button == 5:
+					self.renderer.tiles.scale *= 0.9
 	
 	def describe(self, text):
 		print text

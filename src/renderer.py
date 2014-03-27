@@ -51,7 +51,7 @@ class Renderer:
 		#	obj_image = self.tiles[obj]
 		#	surface.blit(obj_image, (x*self.tile_width, y*self.tile_height))
 
-class Tileset:
+class Tileset(object):
 	def __init__(self, filename, width, height):
 		self.tile_width = 12
 		self.tile_height = 12
@@ -74,10 +74,19 @@ class Tileset:
 
 class AsciiTiles(Tileset):
 	def __init__(self, font):
-		scale = 1/2.0
-		self.tile_width = 16 * scale
-		self.tile_height = 16 * scale
-		self.font = pygame.font.SysFont(font, int(20 * scale))
+		self.fontname = font
+		self.scale = 1/2.0
+
+	@property
+	def scale(self):
+		return self._scale
+
+	@scale.setter
+	def scale(self, value):
+		self._scale = value
+		self.tile_width = 16 * value
+		self.tile_height = 16 * value
+		self.font = pygame.font.SysFont(self.fontname, int(20 * value))
 		self.cache = {}
 
 	def __getitem__(self, thing):
