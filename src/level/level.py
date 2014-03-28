@@ -128,6 +128,27 @@ class Level:
 	def draw_square(self, x1, y1, x2, y2, terrain):
 		for p in self.get_square(x1, y1, x2, y2):
 			self.set_terrain(p, terrain)
+	
+	def is_connected(self, points):
+		if not points:
+			return False
+		connected = []
+		self.get_flood(points[0][0], points[0][1], set(points), connected)
+		if len(set(connected)) == len(set(points)):
+			return True
+		else:
+			return False
+	
+	def get_flood(self, x, y, points, connected):
+		if (x,y) in points and (x,y) not in connected:
+			connected.append((x,y))
+		else:
+			return
+
+		self.get_flood(x+1, y, points, connected)
+		self.get_flood(x-1, y, points, connected)
+		self.get_flood(x, y+1, points, connected)
+		self.get_flood(x, y-1, points, connected)
 
 	def coords_in_dir(self, x, y, d, l):
 		"""Return coordinates offset by l in cardinal direction d"""

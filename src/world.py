@@ -16,6 +16,7 @@ class World:
 		#self.level = TestLevel(self)
 		self.level = VillageLevel(self)
 		self.level.add_object(player)
+		player.move((self.level.size/2, self.level.size/2))
 
 		pygame.key.set_repeat(1, 50)
 

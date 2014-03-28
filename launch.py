@@ -20,7 +20,7 @@ if __name__=='__main__':
 	screen.fill((255, 255, 255))
 
 	#room = Room('start', 'A boring starting room')
-	player = Player('you', 'The Player', (60,60))
+	player = Player('you', 'The Player')
 	world = world.World(player)
 	#world.add_objective(MainQuest(world))
 	world.main_loop(screen)
