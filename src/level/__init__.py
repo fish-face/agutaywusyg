@@ -1,2 +1,2 @@
 from level import *
-from village import VillageLevel
+from village import VillageGenerator

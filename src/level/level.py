@@ -33,29 +33,47 @@ class Level:
 		self.world = world
 
 		self.terraintypes = TERRAINS
-		self.regions = []
-
-		self.setup()
-		self.compute_height()
-	
-	def setup(self):
 		self.objects = []
 		self.map = []
+		self.regions = []
 
-	def compute_height(self):
-		self.height = len(self.map)
-		self.width = len(self.map[0])
+		self.set_cursor(0,0)
+		self.setup()
+
+	def setup(self, width, height, terrain=floor):
+		for obj in self.objects[:]:
+			if obj.location:
+				obj.destroy()
+
+		self.map = []
+		for y in xrange(height):
+			self.map.append([])
+			for x in xrange(width):
+				self.map[-1].append([terrain])
+
+		self.width = width
+		self.height = height
+
+	def set_cursor(self, x, y):
+		"""Set the level's origin; all terrain-drawing will be translated by this amount"""
+		self.x = x
+		self.y = y
 	
+	def translate(self, x, y):
+		"""Like set_cursor but relative"""
+		self.x += x
+		self.y += y
+
 	def set_terrain(self, p, terrain):
-		if p[0] < 0 or p[1] < 0:
+		x = p[0] + self.x
+		y = p[1] + self.y
+
+		if x < 0 or y < 0 or x >= self.width or y >= self.height:
 			return
-		try:
-			if self.map[p[1]][p[0]]:
-				self.map[p[1]][p[0]][0] = terrain
-			else:
-				self.map[p[1]][p[0]] = [terrain]
-		except IndexError:
-			pass
+		if self.map[y][x]:
+			self.map[y][x][0] = terrain
+		else:
+			self.map[y][x] = [terrain]
 
 		#TODO: Nothing specifies that there must be exactly one terrain
 		#      per tile, or even where it is in the tile's list.
@@ -63,28 +81,6 @@ class Level:
 	def draw_line(self, x1, y1, x2, y2, terrain):
 		for p in self.get_line(x1, y1, x2, y2):
 			self.set_terrain(p, terrain)
-		#issteep = abs(y2-y1) > abs(x2-x1)
-		#if issteep:
-		#	x1, y1 = y1, x1
-		#	x2, y2 = y2, x2
-		#deltax = x2 - x1
-		#deltay = abs(y2-y1)
-		#error = int(deltax / 2)
-		#y = y1
-		#ystep = None
-		#if y1 < y2:
-		#	ystep = 1
-		#else:
-		#	ystep = -1
-		#for x in range(x1, x2 + 1):
-		#	if issteep:
-		#		self.set_terrain(y, x, terrain)
-		#	else:
-		#		self.set_terrain(x, y, terrain)
-		#	error -= deltay
-		#	if error < 0:
-		#		y += ystep
-		#		error += deltax
 
 	def get_line(self, x1, y1, x2, y2):
 		points = []
@@ -121,6 +117,7 @@ class Level:
 		return points
 
 	def get_square(self, x1, y1, x2, y2):
+		"""Get all points in the described rectangle, inclusive"""
 		if y1 > y2:
 			y1, y2 = y2, y1
 		if x1 > x2:
@@ -128,6 +125,7 @@ class Level:
 		return [(x,y) for x in xrange(x1,x2+1) for y in xrange(y1,y2+1)]
 
 	def draw_square(self, x1, y1, x2, y2, terrain):
+		"""Draw a filled rectangle with the given coordinates, inclusive"""
 		for p in self.get_square(x1, y1, x2, y2):
 			self.set_terrain(p, terrain)
 	
@@ -168,7 +166,10 @@ class Level:
 			return
 
 		self.objects.append(obj)
+		#Translate by our cursor coords - this should only happen during level generation.
 		if obj.location:
+			x, y = obj.location
+			obj.location = (x+self.x, y+self.y)
 			self[obj.location].append(obj)
 
 		obj.level = self
@@ -176,13 +177,12 @@ class Level:
 		obj.world = self.world
 	
 	def remove_object(self, obj):
+		"""Should only be called from obj.destroy()"""
 		if obj not in self.objects:
 			return
 
 		self.objects.remove(obj)
-		if obj.location:
-			self[obj.location].remove(obj)
-		obj.destroy()
+		self.move_object(obj, None)
 	
 	def move_object(self, obj, location):
 		if obj.location:
@@ -216,19 +216,23 @@ class Region:
 
 from object import *
 from actor import *
+from village import *
 
 class TestLevel(Level):
 	def setup(self):
-		self.map = []
-		for line in TEST_LEVEL:
-			row = []
-			for c in line:
-				row.append([TERRAINS[c]])
-			self.map.append(row)
+		Level.setup(self, 200, 200)
+
+		self.set_cursor(100,100)
+		VillageGenerator(self).generate()
 
 		self.add_object(GameObject('apple', 'A tasty apple', (1,2), char='%'))
-		amulet = GameObject('Amulet of Yendor', 'Pretty important', (8,3), char='"')
-		rodney = Rodney(location=(8,3))
+		amulet = GameObject('Amulet of Yendor', 'Pretty important', char='"')
+
+		house = random.choice(self.regions)
+		pos = random.choice(house.points)
+		rodney = Rodney(location=pos)
 		self.add_object(amulet)
 		rodney.add(amulet)
 		self.add_object(rodney)
+
+		self.set_cursor(0,0)

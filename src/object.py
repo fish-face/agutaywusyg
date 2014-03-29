@@ -116,7 +116,7 @@ class GameObject:
 	def removeself(self):
 		"""Remove self from any container"""
 		if self.container:
-			container.remove(self)
+			self.container.remove(self)
 	
 	def destroy(self):
 		#TODO if we get deleted, will there be references to us hanging around?
@@ -124,9 +124,9 @@ class GameObject:
 		for obj in self.contained:
 			self.remove(obj)
 		self.destroyed = True
-		self.move(None)
 
 		self.on_destroyed()
+		self.level.remove_object(self)
 	
 	def __str__(self):
 		return self.name
