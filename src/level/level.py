@@ -33,6 +33,8 @@ class Level:
 		self.world = world
 
 		self.terraintypes = TERRAINS
+		self.regions = []
+
 		self.setup()
 		self.compute_height()
 	
@@ -202,6 +204,15 @@ class Level:
 	
 	def __getitem__(self, location):
 		return self.get_tile(location[0], location[1]) if location else None
+
+class Region:
+	def __init__(self, name, level, points):
+		self.name = name
+		self.level = level
+		self.points = points
+	
+	def __in__(self, p):
+		return p in self.points
 
 from object import *
 from actor import *

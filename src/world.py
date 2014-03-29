@@ -2,10 +2,12 @@
 
 import sys
 import pygame
+import random
 from collections import defaultdict
 
 from renderer import Renderer
 from level import TestLevel, VillageLevel
+from actor import Rodney
 
 class World:
 	def __init__(self, player):
@@ -16,6 +18,10 @@ class World:
 		#self.level = TestLevel(self)
 		self.level = VillageLevel(self)
 		self.level.add_object(player)
+		house = random.choice(self.level.regions)
+		pos = random.choice(house.points)
+		wiz = Rodney(location=pos)
+		self.level.add_object(wiz)
 		player.move((self.level.size/2, self.level.size/2))
 
 		pygame.key.set_repeat(1, 50)
