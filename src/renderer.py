@@ -15,11 +15,12 @@ class Renderer:
 		#TODO: receive surface in init?
 		w = surface.get_width()
 		h = surface.get_height()
-		#player_view = pygame.Rect(0, 0, self.view_w * self.tiles.tile_width,
-		#                                self.view_h * self.tiles.tile_height)
+		tw = self.tiles.tile_width
+		th = self.tiles.tile_height
+
 		player_view = pygame.Rect(0, 0, self.view_w * w, self.view_w * h)
-		player_view.center = (player.location[0] * self.tiles.tile_width,
-		                      player.location[1] * self.tiles.tile_height)
+		player_view.center = (player.location[0] * tw,
+		                      player.location[1] * th)
 
 		if not self.centre:
 			self.centre = player_view.center
@@ -37,12 +38,17 @@ class Renderer:
 			self.centre = view.center
 
 		surface.fill((0,0,0))
+		#Calculate visible tiles
+		x1 = max(0, int(view.left / tw))
+		y1 = max(0, int(view.top / th))
+		x2 = min(level.width, int(view.right / tw))
+		y2 = min(level.height, int(view.bottom / th))
+
 		#TODO: Render order!
-		for (x, y, tile) in level.get_tiles():
+		for (x, y, tile) in level.get_tiles(x1, y1, x2, y2):
 			for thing in tile:
-				tile_image = self.tiles[thing]
-				surface.blit(tile_image, (x*self.tiles.tile_width - view.left,
-				                          y*self.tiles.tile_height - view.top))
+				surface.blit(self.tiles[thing], (x*tw - view.left,
+				                                 y*th - view.top))
 
 		#for obj in objects:
 		#	if not obj.location: continue

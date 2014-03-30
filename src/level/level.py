@@ -34,7 +34,7 @@ class Level:
 		self.world = world
 
 		self.terraintypes = TERRAINS
-		self.objects = []
+		self.objects = set()
 		self.map = []
 		self.regions = []
 
@@ -42,9 +42,10 @@ class Level:
 		self.setup()
 
 	def setup(self, width, height, terrain=floor):
-		for obj in self.objects[:]:
-			if obj.location:
-				obj.destroy()
+		for obj in self.objects.copy():
+			obj.destroy()
+
+		self.regions = []
 
 		self.map = []
 		for y in xrange(height):
@@ -64,6 +65,10 @@ class Level:
 		"""Like set_cursor but relative"""
 		self.x += x
 		self.y += y
+	
+	def add_region(self, name, points):
+		"""Add a region and translate by our cursor"""
+		self.regions.append(Region(name, self, [(x+self.x, y+self.y) for x, y in points]))
 
 	def set_terrain(self, p, terrain):
 		x = p[0] + self.x
@@ -166,7 +171,7 @@ class Level:
 		if obj in self.objects:
 			return
 
-		self.objects.append(obj)
+		self.objects.add(obj)
 		#Translate by our cursor coords - this should only happen during level generation.
 		if obj.location:
 			x, y = obj.location
@@ -182,10 +187,11 @@ class Level:
 		if obj not in self.objects:
 			return
 
+		obj.move(None)
 		self.objects.remove(obj)
-		self.move_object(obj, None)
 
 	def move_object(self, obj, location):
+		"""Should only be called from obj.move"""
 		if obj.location:
 			self[obj.location].remove(obj)
 		if location:
@@ -198,9 +204,9 @@ class Level:
 		except (KeyError, IndexError):
 			return None
 
-	def get_tiles(self):
-		for y in range(self.height):
-			for x in range(self.width):
+	def get_tiles(self, x1, y1, x2, y2):
+		for y in range(y1, y2):
+			for x in range(x1, x2):
 				yield (x, y, self.map[y][x])
 
 	def __getitem__(self, location):
@@ -220,14 +226,17 @@ from object import *
 from actor import *
 from village import *
 
+grass = TerrainInfo('v', 'road', (0,1), False, False)
+
 class TestLevel(Level):
 	def setup(self):
 		Level.setup(self, 200, 200)
 
 		self.set_cursor(100,100)
 		VillageGenerator(self).generate()
-
 		self.add_object(GameObject('apple', 'A tasty apple', (1,2), char='%'))
+		self.set_cursor(0,0)
+
 		amulet = GameObject('Amulet of Yendor', 'Pretty important', char='"')
 
 		house = random.choice(self.regions)
@@ -237,4 +246,3 @@ class TestLevel(Level):
 		rodney.add(amulet)
 		self.add_object(rodney)
 
-		self.set_cursor(0,0)

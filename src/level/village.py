@@ -3,7 +3,6 @@ from generator import Generator
 
 import random
 
-grass = TerrainInfo('v', 'road', (0,1), False, False)
 road = TerrainInfo('.', 'road', (0,1), False, False)
 door = TerrainInfo('+', 'door', (0,1), False, False)
 tree = TerrainInfo('T', 'tree', (0,1), False, False)
@@ -143,7 +142,7 @@ class VillageGenerator(Generator):
 		self.level.set_terrain((door_x, door_y), door)
 		self.level.set_terrain(self.level.coords_in_dir(door_x, door_y, direction, -1), road)
 
-		self.level.regions.append(Region('Someone\'s House', self, self.level.get_square(x1+1, y1+1, x2-1, y2-1)))
+		self.level.add_region('Someone\'s House', self.level.get_square(x1+1, y1+1, x2-1, y2-1))
 
 		self.occupied |= set(self.level.get_square(x1, y1, x2, y2))
 

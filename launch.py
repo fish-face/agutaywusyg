@@ -4,6 +4,7 @@ import pygame
 import pygame.locals
 import sys
 import os
+import cProfile
 
 sys.path.append(os.path.join('.', 'src'))
 
@@ -14,6 +15,8 @@ from object import GameObject
 from renderer import Renderer
 from quest import MainQuest
 
+PROFILE = False
+
 if __name__=='__main__':
 	pygame.init()
 	screen = pygame.display.set_mode((512, 512))
@@ -23,7 +26,10 @@ if __name__=='__main__':
 	player = Player('you', 'The Player')
 	world = world.World(player)
 	#world.add_objective(MainQuest(world))
-	world.main_loop(screen)
+	if PROFILE:
+		cProfile.run('world.main_loop(screen)')
+	else:
+		world.main_loop(screen)
 
     #table = load_tile_table("/home/fish/Pictures/M_BISON_YESSSSSSS.jpg", 24, 16)
     #for x, row in enumerate(table):
