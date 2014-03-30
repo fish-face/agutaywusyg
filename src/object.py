@@ -1,6 +1,8 @@
 ### Contains definition of Game Objects
 
-class GameObject:
+from ai import predicate
+
+class GameObject(object):
 	"""An object in the game world"""
 	def __init__(self, name, description='', location=None, char='?'):
 		"""Create a new GameObject with the given name, description and location."""
@@ -31,8 +33,17 @@ class GameObject:
 		self.def_article = 'the'
 		self.prefer_definite = False
 
+		self.setup_facts()
+
 	#TODO: something something locations vs containers
 	#TODO: No, really???
+
+	def setup_facts(self):
+		self.location_fact = predicate.In(self, self.location)
+	
+	@property
+	def facts(self):
+		return [self.location_fact]
 
 	def indefinite(self):
 		"""Name of the object with indefinite article"""
@@ -58,6 +69,7 @@ class GameObject:
 		self.level.move_object(self, location)
 
 		self.location = location
+		self.location_fact = predicate.In(self, self.location)
 		#self.level[self.location].append(self)
 
 		self.on_moved()

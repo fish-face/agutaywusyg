@@ -249,9 +249,21 @@ class TestLevel(Level):
 		rodney.add(amulet)
 		self.add_object(rodney)
 
+		npcs = []
 		for name in ['Jack', 'Jill', 'Jim']:
 			house = houses.pop()
 			pos = random.choice(house.points)
 			npc = Villager(name=name, location=pos)
+			npcs.append(npc)
 			self.add_object(npc)
+
+		knowledge = [f for facts in [obj.facts for obj in self.objects] for f in facts]
+		print knowledge
+		random.shuffle(knowledge)
+		for npc in npcs:
+			for i in range(random.randrange(1,4)):
+				if not knowledge:
+					break
+				fact = knowledge.pop()
+				npc.knowledge.append(fact)
 
