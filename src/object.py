@@ -33,7 +33,7 @@ class GameObject:
 
 	#TODO: something something locations vs containers
 	#TODO: No, really???
-	
+
 	def indefinite(self):
 		"""Name of the object with indefinite article"""
 		return '%s %s' % (self.indef_article, self.name)
@@ -82,7 +82,6 @@ class GameObject:
 		for cb in self.moved_cbs:
 			cb(self)
 
-
 	def add(self, other):
 		"""Put other inside me, if possible."""
 		if other == self:
@@ -99,11 +98,12 @@ class GameObject:
 			return True
 		else:
 			raise NotImplemented
-	
+
 	def remove(self, other):
 		"""Remove other from me.
-		   
+
 		   Default behaviour is to place in world at current location."""
+
 		if other in self.contained:
 			other.container = None
 			self.contained.remove(other)
@@ -112,12 +112,12 @@ class GameObject:
 			other.on_removed()
 
 			return True
-	
+
 	def removeself(self):
 		"""Remove self from any container"""
 		if self.container:
 			self.container.remove(self)
-	
+
 	def destroy(self):
 		#TODO if we get deleted, will there be references to us hanging around?
 		self.removeself()
@@ -127,6 +127,6 @@ class GameObject:
 
 		self.on_destroyed()
 		self.level.remove_object(self)
-	
+
 	def __str__(self):
 		return self.name
