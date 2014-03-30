@@ -131,7 +131,7 @@ class World:
 					self.renderer.tiles.scale *= 0.9
 	
 	def describe(self, text):
-		print text
+		print text[0].upper() + text[1:]
 
 	def update(self):
 		pass

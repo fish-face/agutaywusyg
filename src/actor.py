@@ -23,12 +23,18 @@ class Actor(GameObject):
 
 	def die(self, killer):
 		"""I died, somehow."""
-		self.world.describe('%s kills %s!' % (killer.definite(), self.definite()))
+		self.world.describe('%s killed %s!' % (killer.definite(), self.definite()))
 		self.destroy()
 
 class Player(Actor):
 	def __init__(self, *args, **kwargs):
 		Actor.__init__(self, char='@', *args, **kwargs)
+	
+	def definite(self):
+		return self.name
+
+	def indefinite(self):
+		return self.name
 
 class Rodney(Actor):
 	def __init__(self, *args, **kwargs):
