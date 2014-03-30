@@ -18,7 +18,7 @@ class World:
 		self.level = TestLevel(self)
 		#self.level = VillageLevel(self)
 		self.level.add_object(player)
-		player.move((self.level.width/2, self.level.height/2))
+		player.location = (self.level.width/2, self.level.height/2)
 
 		pygame.key.set_repeat(1, 50)
 
@@ -114,7 +114,7 @@ class World:
 
 				if newloc != self.player.location:
 					if self.can_move_to(self.player, newloc):
-						self.player.move(newloc)
+						self.player.location = newloc
 					else:
 						enemies = self.get_objects_at(newloc, lambda o: o.flag('hostile'))
 						if enemies:

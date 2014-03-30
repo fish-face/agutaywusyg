@@ -172,22 +172,23 @@ class Level:
 			return
 
 		self.objects.add(obj)
-		#Translate by our cursor coords - this should only happen during level generation.
-		if obj.location:
-			x, y = obj.location
-			obj.location = (x+self.x, y+self.y)
-			self[obj.location].append(obj)
 
 		obj.level = self
 		#TODO: Is there a better way of letting the object do world-things??
 		obj.world = self.world
+
+		#Translate by our cursor coords - this should only happen during level generation.
+		if obj.location:
+			x, y = obj.location
+			self[(x,y)].append(obj)
+			obj.location = (x+self.x, y+self.y)
 
 	def remove_object(self, obj):
 		"""Should only be called from obj.destroy()"""
 		if obj not in self.objects:
 			return
 
-		obj.move(None)
+		obj.location = None
 		self.objects.remove(obj)
 
 	def move_object(self, obj, location):

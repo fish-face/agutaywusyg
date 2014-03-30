@@ -8,7 +8,7 @@ class GameObject(object):
 		"""Create a new GameObject with the given name, description and location."""
 		self.name = name
 		self.description = description
-		self.location = location
+		self._location = location
 		self.level = None
 		self.container = None
 		self.contained = []
@@ -38,6 +38,20 @@ class GameObject(object):
 	#TODO: something something locations vs containers
 	#TODO: No, really???
 
+	@property
+	def location(self):
+		return self._location
+
+	@location.setter
+	def location(self, value):
+		#TODO: Moving between levels. (Don't forget to move contained objects)
+		self.level.move_object(self, value)
+
+		self._location = value
+		self.location_fact = predicate.In(self, self.location)
+
+		self.on_moved()
+
 	def setup_facts(self):
 		self.location_fact = predicate.In(self, self.location)
 	
@@ -61,18 +75,6 @@ class GameObject(object):
 		if flag not in self.flags or not self.flags[flag]:
 			return False
 		return True
-
-	def move(self, location):
-		"""Move the object to location"""
-		#TODO: Moving between levels. (Don't forget to move contained objects)
-		#self.level[self.location].remove(self)
-		self.level.move_object(self, location)
-
-		self.location = location
-		self.location_fact = predicate.In(self, self.location)
-		#self.level[self.location].append(self)
-
-		self.on_moved()
 
 	def canfit(self, other):
 		"""Can other fit inside me?"""
@@ -100,7 +102,7 @@ class GameObject(object):
 			return False
 
 		if self.canfit(other):
-			other.move(None)
+			other.location = None
 			other.removeself()
 			self.contained.append(other)
 			other.container = self
@@ -119,7 +121,7 @@ class GameObject(object):
 		if other in self.contained:
 			other.container = None
 			self.contained.remove(other)
-			other.move(self.location)
+			other.location = self.location
 
 			other.on_removed()
 
