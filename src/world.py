@@ -119,6 +119,10 @@ class World:
 						enemies = self.get_objects_at(newloc, lambda o: o.flag('hostile'))
 						if enemies:
 							enemies[0].hit(self.player, 1)
+						else:
+							can_talk = self.get_objects_at(newloc, lambda o: hasattr(o, 'ask'))
+							if can_talk:
+								self.describe('%s says: %s' % (can_talk[0], can_talk[0].ask(self.player, 'hello')))
 
 			if e.type == pygame.MOUSEBUTTONUP:
 				if e.button == 4:

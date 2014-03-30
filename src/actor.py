@@ -32,6 +32,9 @@ class Player(Actor):
 
 class Rodney(Actor):
 	def __init__(self, *args, **kwargs):
-		Actor.__init__(self, name='Wizard of Yendor', char='@', *args, **kwargs)
+		Actor.__init__(self, name='Wizard of Yendor', char='W', *args, **kwargs)
 		self.flags['hostile'] = True
 
+class Villager(Actor):
+	def __init__(self, *args, **kwargs):
+		Actor.__init__(self, char='P', *args, **kwargs)

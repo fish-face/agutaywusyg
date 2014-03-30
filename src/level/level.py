@@ -239,10 +239,19 @@ class TestLevel(Level):
 
 		amulet = GameObject('Amulet of Yendor', 'Pretty important', char='"')
 
-		house = random.choice(self.regions)
+		houses = self.regions[:]
+		random.shuffle(houses)
+
+		house = houses.pop()
 		pos = random.choice(house.points)
 		rodney = Rodney(location=pos)
 		self.add_object(amulet)
 		rodney.add(amulet)
 		self.add_object(rodney)
+
+		for name in ['Jack', 'Jill', 'Jim']:
+			house = houses.pop()
+			pos = random.choice(house.points)
+			npc = Villager(name=name, location=pos)
+			self.add_object(npc)
 
