@@ -48,12 +48,16 @@ class GameObject(object):
 		self.level.move_object(self, value)
 
 		self._location = value
-		self.location_fact = predicate.In(self, self.location)
+		regions = self.level.get_regions(value)
+		if regions:
+			self.location_fact = predicate.In(self, regions[0])
+		else:
+			self.location_fact = predicate.In(self, value)
 
 		self.on_moved()
 
 	def setup_facts(self):
-		self.location_fact = predicate.In(self, self.location)
+		pass
 	
 	@property
 	def facts(self):

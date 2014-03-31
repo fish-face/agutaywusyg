@@ -65,10 +65,14 @@ class Level:
 		"""Like set_cursor but relative"""
 		self.x += x
 		self.y += y
-	
+
 	def add_region(self, name, points):
 		"""Add a region and translate by our cursor"""
 		self.regions.append(Region(name, self, [(x+self.x, y+self.y) for x, y in points]))
+
+	def get_regions(self, location):
+		"""Get regions containing the given location"""
+		return [region for region in self.regions if location in region]
 
 	def set_terrain(self, p, terrain):
 		x = p[0] + self.x
@@ -220,12 +224,16 @@ class Region:
 		self.level = level
 		self.points = points
 
-	def __in__(self, p):
+	def __str__(self):
+		return self.name
+
+	def __contains__(self, p):
 		return p in self.points
 
 from object import *
 from actor import *
 from village import *
+from util import names
 
 grass = TerrainInfo('v', 'road', (0,1), False, False)
 
@@ -244,6 +252,7 @@ class TestLevel(Level):
 		random.shuffle(houses)
 
 		house = houses.pop()
+		house.name = '%s\'s House' % (names.tolkien_gen.generate())
 		pos = random.choice(house.points)
 		rodney = Rodney(location=pos)
 		self.add_object(amulet)
@@ -251,15 +260,16 @@ class TestLevel(Level):
 		self.add_object(rodney)
 
 		npcs = []
-		for name in ['Jack', 'Jill', 'Jim']:
+		mynames = [names.tolkien_gen.generate() for i in range(3)]
+		for name in mynames:
 			house = houses.pop()
+			house.name = '%s\'s House' % (name)
 			pos = random.choice(house.points)
 			npc = Villager(name=name, location=pos)
 			npcs.append(npc)
 			self.add_object(npc)
 
 		knowledge = [f for facts in [obj.facts for obj in self.objects] for f in facts]
-		print knowledge
 		random.shuffle(knowledge)
 		for npc in npcs:
 			for i in range(random.randrange(1,4)):
