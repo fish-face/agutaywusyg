@@ -9,7 +9,7 @@ class GameObject(object):
         self.name = name
         self.description = description
         self._location = location
-        self.level = None
+        self._level = None
         self.container = None
         self.contained = []
         self.destroyed = False
@@ -55,6 +55,14 @@ class GameObject(object):
             self.location_fact = predicate.In(self, value)
 
         self.on_moved()
+
+    @property
+    def level(self):
+        return self._level
+
+    @level.setter
+    def level(self, value):
+        self._level = value
 
     def setup_facts(self):
         pass

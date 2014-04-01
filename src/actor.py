@@ -4,6 +4,7 @@ import random
 
 from object import GameObject
 
+
 class Actor(GameObject):
     def __init__(self, name, description='', location=None, *args, **kwargs):
         GameObject.__init__(self, name, description, location, *args, **kwargs)
@@ -12,6 +13,19 @@ class Actor(GameObject):
         self.relationships = None
         self.hp = 1
         self.block_move = True
+        self.map_memory = {}
+
+    @property
+    def level(self):
+        return self._level
+
+    @level.setter
+    def level(self, value):
+        self._level = value
+        if value not in self.map_memory:
+            self.map_memory[value] = [None] * value.height
+            for y in xrange(value.height):
+                self.map_memory[value][y] = [None] * value.width
 
     def ask(self, other, topic):
         """Ask another Actor about topic"""
@@ -37,6 +51,11 @@ class Actor(GameObject):
         self.world.describe('%s killed %s!' % (killer.definite(), self.definite()))
         self.destroy()
 
+    def update_fov(self):
+        self.fov = self.level.get_fov(self.location)
+        for p in self.fov:
+            self.map_memory[self.level][p[1]][p[0]] = self.level[p]
+
 class Player(Actor):
     def __init__(self, *args, **kwargs):
         Actor.__init__(self, char='@', *args, **kwargs)
@@ -46,6 +65,11 @@ class Player(Actor):
 
     def indefinite(self):
         return self.name
+
+    def on_moved(self):
+        Actor.on_moved(self)
+        self.update_fov()
+
 
 class Rodney(Actor):
     def __init__(self, *args, **kwargs):

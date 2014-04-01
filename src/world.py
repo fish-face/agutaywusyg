@@ -27,6 +27,8 @@ class World:
         self.renderer = Renderer()
         self.clock = pygame.time.Clock()
 
+        self.font = pygame.font.SysFont('Sans', 18)
+
     #def add_object(self, obj):
     #   if obj in self.objects:
     #       return
@@ -71,11 +73,13 @@ class World:
 
     def main_loop(self, screen):
         while not self.quitting:
-            delay = self.clock.tick(30)
+            delay = self.clock.tick(1000)
             framerate = 1000.0/delay
             self.process_events()
             self.update()
             self.renderer.render(screen, self.level, self.player)
+            screen.blit(self.font.render('%d fps' % framerate, True, (255,255,255)),
+                        (1, 1))
             pygame.display.flip()
 
     def process_events(self):

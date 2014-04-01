@@ -17,10 +17,11 @@ class Renderer:
         h = surface.get_height()
         tw = self.tiles.tile_width
         th = self.tiles.tile_height
+        player_x = player.location[0]
+        player_y = player.location[1]
 
         player_view = pygame.Rect(0, 0, self.view_w * w, self.view_w * h)
-        player_view.center = (player.location[0] * tw,
-                              player.location[1] * th)
+        player_view.center = (player_x * tw, player_y * th)
 
         if not self.centre:
             self.centre = player_view.center
@@ -28,7 +29,7 @@ class Renderer:
         view = pygame.Rect(0, 0, w, h)
         view.center = self.centre
 
-        #Centre view on player
+        # Centre view on player
         if not view.contains(player_view):
             view.left = min(view.left, player_view.left)
             view.right = max(view.right, player_view.right)
@@ -38,24 +39,38 @@ class Renderer:
             self.centre = view.center
 
         surface.fill((0,0,0))
-        #Calculate visible tiles
+        # Calculate visible tiles
         x1 = max(0, int(view.left / tw))
         y1 = max(0, int(view.top / th))
         x2 = min(level.width, int(view.right / tw))
         y2 = min(level.height, int(view.bottom / th))
 
-        #TODO: Render order!
-        for (x, y, tile) in level.get_tiles(x1, y1, x2, y2):
-            for thing in tile:
-                surface.blit(self.tiles[thing], (x*tw - view.left,
-                                                 y*th - view.top))
+        # TODO: Render order!
+        radius2 = 20.0 ** 2
+        map_memory = player.map_memory[level]
+        # NOTE: 1.5x speedup available here by iterating directly
+        #for (x, y, tile) in level.get_tiles(x1, y1, x2, y2):
+        for y in xrange(y1, y2):
+            row = map_memory[y]
+            for x in xrange(x1, x2):
+                if row[x]:
+                    tile = row[x]
+                    if (x, y) in player.fov:
+                        for thing in tile:
+                            surface.blit(self.tiles[thing], (x*tw - view.left,
+                                                            y*th - view.top))
+                        #dist2 = max(1,(x - player_x)**2 + (y - player_y)**2)
+                        self.tiles.dim_overlay.set_alpha(196 * player.fov[(x,y)]/radius2)
+                        surface.blit(self.tiles.dim_overlay,
+                                    (x*tw - view.left, y*th - view.top))
+                    else:
+                        # First tile is terrain (at the moment...)
+                        surface.blit(self.tiles[tile[0]], (x*tw - view.left,
+                                                        y*th - view.top))
+                        self.tiles.dim_overlay.set_alpha(196)
+                        surface.blit(self.tiles.dim_overlay,
+                                    (x*tw - view.left, y*th - view.top))
 
-        #for obj in objects:
-        #   if not obj.location: continue
-
-        #   x, y = obj.location
-        #   obj_image = self.tiles[obj]
-        #   surface.blit(obj_image, (x*self.tile_width, y*self.tile_height))
 
 class Tileset(object):
     def __init__(self, filename, width, height):
@@ -78,6 +93,7 @@ class Tileset(object):
     def __getitem__(self, thing):
         return self.tile_table[thing.tileindex[0]][thing.tileindex[0]]
 
+
 class AsciiTiles(Tileset):
     def __init__(self, font):
         self.fontname = font
@@ -90,8 +106,11 @@ class AsciiTiles(Tileset):
     @scale.setter
     def scale(self, value):
         self._scale = value
-        self.tile_width = 16 * value
-        self.tile_height = 16 * value
+        self.tile_width = 20 * value
+        self.tile_height = 20 * value
+        self.dim_overlay = pygame.Surface((int(self.tile_width),
+                                           int(self.tile_height)))
+        self.dim_overlay.fill((0,0,0))
         self.font = pygame.font.SysFont(self.fontname, int(20 * value))
         self.cache = {}
 
@@ -99,5 +118,6 @@ class AsciiTiles(Tileset):
         char = getattr(thing, 'char', '?')
         if char not in self.cache:
             self.cache[char] = self.font.render(char, True, (255,255,255))
+            #pygame.draw.rect(self.cache[char], (32,32,32), (0,0,self.tile_width, self.tile_height+1), 1)
 
         return self.cache[char]
