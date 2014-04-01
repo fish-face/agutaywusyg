@@ -68,7 +68,8 @@ class Player(Actor):
 
     def on_moved(self):
         Actor.on_moved(self)
-        self.update_fov()
+        if self.location:
+            self.update_fov()
 
 
 class Rodney(Actor):
