@@ -1,8 +1,10 @@
 # encoding=utf-8
 
 from level import TerrainInfo, floor, wall
-from objects import Door, Key
+from objects import Door, Key, GameObject
+from actor import Rodney, Villager
 from generator import Generator
+from util import names
 
 import random
 
@@ -33,20 +35,44 @@ class VillageGenerator(Generator):
         self.roads = []
         self.roads_h = set()
         self.roads_v = set()
+        self.houses = []
 
         self.make_roads(x1, y1, self.num_roads)
 
-        #Put houses next to roads whereever possible
+        # Put houses next to roads whereever possible
         width = self.house_size + random.randint(-3,3)
         depth = self.house_size + random.randint(-3,3)
         for x, y in self.roads:
-            #Don't change size every time
+            # Don't change size every time
             if random.random() < 0.1:
                 width = self.house_size + random.randint(-3,3)
             if random.random() < 0.1:
                 depth = self.house_size + random.randint(-3,3)
             for d in range(4):
                 self.make_house(x, y, d, width, depth)
+
+        amulet = GameObject('Amulet of Yendor', 'Pretty important', char='"')
+
+        random.shuffle(self.houses)
+
+        house = self.houses.pop()
+        name = '%s\'s House' % (names.tolkien_gen.generate())
+        pos = random.choice(house)
+        rodney = Rodney(location=pos)
+        self.level.add_object(amulet)
+        rodney.add(amulet)
+        self.level.add_object(rodney)
+        self.level.add_region(name, house)
+
+        npcs = []
+        mynames = [names.tolkien_gen.generate() for i in range(3)]
+        for name in mynames:
+            house = self.houses.pop()
+            pos = random.choice(house)
+            npc = Villager(name=name, location=pos)
+            npcs.append(npc)
+            self.level.add_object(npc)
+            self.level.add_region('%s\'s House' % (name), house)
 
         self.level.translate(self.size/2, self.size/2)
 
@@ -142,9 +168,8 @@ class VillageGenerator(Generator):
         self.level.draw_line(x2, y1, x2, y2, wall)
         self.level.draw_line(x2, y2, x1, y2, wall)
         self.level.draw_line(x1, y2, x1, y1, wall)
-        # TODO: Actually work out what's going on with terrain vs objects
         door = Door((door_x, door_y))
-        self.level.set_terrain((door_x, door_y), door)
+        self.level.set_terrain((door_x, door_y), floor)
         self.level.add_object(door)
         path = self.level.coords_in_dir(door_x, door_y, direction, -1)
         self.level.set_terrain(path, road)
@@ -154,7 +179,8 @@ class VillageGenerator(Generator):
             door.key = key
             self.level.add_object(key)
 
-        self.level.add_region('Someone\'s House', self.level.get_square(x1+1, y1+1, x2-1, y2-1))
+        #self.level.add_region('Someone\'s House', self.level.get_square(x1+1, y1+1, x2-1, y2-1))
+        self.houses.append(self.level.get_square(x1+1, y1+1, x2-1, y2-1))
 
         self.occupied |= set(self.level.get_square(x1, y1, x2, y2))
 

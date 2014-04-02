@@ -307,10 +307,9 @@ class Region:
     def __contains__(self, p):
         return p in self.points
 
-from objects import *
-from actor import *
-from village import *
-from util import names
+from village import VillageGenerator
+from actor import Villager
+import random
 
 grass = TerrainInfo('v', 'road', (0,1), False, False)
 
@@ -320,35 +319,11 @@ class TestLevel(Level):
 
         self.set_cursor(100,100)
         VillageGenerator(self).generate()
-        self.add_object(GameObject('apple', 'A tasty apple', (1,2), char='%'))
         self.set_cursor(0,0)
-
-        amulet = GameObject('Amulet of Yendor', 'Pretty important', char='"')
-
-        houses = self.regions[:]
-        random.shuffle(houses)
-
-        house = houses.pop()
-        house.name = '%s\'s House' % (names.tolkien_gen.generate())
-        pos = random.choice(house.points)
-        rodney = Rodney(location=pos)
-        self.add_object(amulet)
-        rodney.add(amulet)
-        self.add_object(rodney)
-
-        npcs = []
-        mynames = [names.tolkien_gen.generate() for i in range(3)]
-        for name in mynames:
-            house = houses.pop()
-            house.name = '%s\'s House' % (name)
-            pos = random.choice(house.points)
-            npc = Villager(name=name, location=pos)
-            npcs.append(npc)
-            self.add_object(npc)
 
         knowledge = [f for facts in [obj.facts for obj in self.objects] for f in facts]
         random.shuffle(knowledge)
-        for npc in npcs:
+        for npc in [obj for obj in self.objects if isinstance(obj, Villager)]:
             for i in range(random.randrange(1,4)):
                 if not knowledge:
                     break
