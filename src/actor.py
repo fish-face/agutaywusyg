@@ -2,7 +2,7 @@
 
 import random
 
-from object import GameObject
+from objects import GameObject
 
 
 class Actor(GameObject):

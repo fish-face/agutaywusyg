@@ -10,11 +10,7 @@ import pstats
 sys.path.append(os.path.join('.', 'src'))
 
 import world
-from location import *
-from actor import *
-from object import GameObject
-from renderer import Renderer
-from quest import MainQuest
+from actor import Player
 
 PROFILE = False
 

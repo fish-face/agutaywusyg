@@ -109,7 +109,7 @@ class GameObject(object):
             cb(self)
 
     def bumped(self, other):
-        return self.block_move
+        return False
 
     def add(self, other):
         """Put other inside me, if possible."""

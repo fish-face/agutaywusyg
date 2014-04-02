@@ -307,7 +307,7 @@ class Region:
     def __contains__(self, p):
         return p in self.points
 
-from object import *
+from objects import *
 from actor import *
 from village import *
 from util import names
