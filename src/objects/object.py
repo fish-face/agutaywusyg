@@ -4,12 +4,11 @@ from ai import predicate
 
 class GameObject(object):
     """An object in the game world"""
-    def __init__(self, name, description='', location=None, char='?'):
+    def __init__(self, name, level, description='', location=None, char='?'):
         """Create a new GameObject with the given name, description and location."""
         self.name = name
         self.description = description
         self._location = location
-        self._level = None
         self.container = None
         self.contained = []
         self.destroyed = False
@@ -25,6 +24,8 @@ class GameObject(object):
         self.added_cbs = []
         self.removed_cbs = []
         self.destroyed_cbs = []
+
+        self.level = level
 
         if self.name[0].lower() in 'aeiou':
             self.indef_article = 'an'
@@ -62,7 +63,13 @@ class GameObject(object):
 
     @level.setter
     def level(self, value):
+        if hasattr(self, '_level') and self._level:
+            self._level.remove_object(self)
         self._level = value
+        # Will world ever be different? Well, take no chances regarding future-dumbness...
+        self.world = self._level.world
+        if self._level:
+            self._level.add_object(self)
 
     def setup_facts(self):
         pass

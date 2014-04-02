@@ -254,10 +254,6 @@ class Level:
 
         self.objects.add(obj)
 
-        obj.level = self
-        #TODO: Is there a better way of letting the object do world-things??
-        obj.world = self.world
-
         #Translate by our cursor coords - this should only happen during level generation.
         if obj.location:
             x, y = obj.location
@@ -293,6 +289,9 @@ class Level:
 
     def __getitem__(self, location):
         return self.get_tile(location[0], location[1]) if location else None
+
+    def __contains__(self, other):
+        return other in self.objects
 
 
 class Region:

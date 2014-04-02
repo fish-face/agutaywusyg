@@ -7,13 +7,14 @@ from objects import GameObject
 
 class Actor(GameObject):
     def __init__(self, name, description='', location=None, *args, **kwargs):
-        GameObject.__init__(self, name, description, location, *args, **kwargs)
+        self.map_memory = {}
+
+        GameObject.__init__(self, name=name, description=description, location=location, *args, **kwargs)
 
         self.knowledge = []
         self.relationships = None
         self.hp = 1
         self.block_move = True
-        self.map_memory = {}
 
     @property
     def level(self):
@@ -21,11 +22,11 @@ class Actor(GameObject):
 
     @level.setter
     def level(self, value):
-        self._level = value
         if value not in self.map_memory:
             self.map_memory[value] = [None] * value.height
             for y in xrange(value.height):
                 self.map_memory[value][y] = [None] * value.width
+        GameObject.level.fset(self, value)
 
     def ask(self, other, topic):
         """Ask another Actor about topic"""

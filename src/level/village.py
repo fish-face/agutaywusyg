@@ -51,28 +51,25 @@ class VillageGenerator(Generator):
             for d in range(4):
                 self.make_house(x, y, d, width, depth)
 
-        amulet = GameObject('Amulet of Yendor', 'Pretty important', char='"')
+        amulet = GameObject('Amulet of Yendor', self.level, 'Pretty important', char='"')
 
         random.shuffle(self.houses)
 
         house = self.houses.pop()
         name = '%s\'s House' % (names.tolkien_gen.generate())
-        pos = random.choice(house)
-        rodney = Rodney(location=pos)
-        self.level.add_object(amulet)
-        rodney.add(amulet)
-        self.level.add_object(rodney)
         self.level.add_region(name, house)
+        pos = random.choice(house)
+        rodney = Rodney(level=self.level, location=pos)
+        rodney.add(amulet)
 
         npcs = []
         mynames = [names.tolkien_gen.generate() for i in range(3)]
         for name in mynames:
             house = self.houses.pop()
-            pos = random.choice(house)
-            npc = Villager(name=name, location=pos)
-            npcs.append(npc)
-            self.level.add_object(npc)
             self.level.add_region('%s\'s House' % (name), house)
+            pos = random.choice(house)
+            npc = Villager(name=name, level=self.level, location=pos)
+            npcs.append(npc)
 
         self.level.translate(self.size/2, self.size/2)
 
@@ -168,16 +165,14 @@ class VillageGenerator(Generator):
         self.level.draw_line(x2, y1, x2, y2, wall)
         self.level.draw_line(x2, y2, x1, y2, wall)
         self.level.draw_line(x1, y2, x1, y1, wall)
-        door = Door((door_x, door_y))
+        door = Door((door_x, door_y), level=self.level)
         self.level.set_terrain((door_x, door_y), floor)
-        self.level.add_object(door)
         path = self.level.coords_in_dir(door_x, door_y, direction, -1)
         self.level.set_terrain(path, road)
         if random.randint(0,4) == 0:
             door.locked = True
-            key = Key(door, location=path)
+            key = Key(door, level=self.level, location=path)
             door.key = key
-            self.level.add_object(key)
 
         #self.level.add_region('Someone\'s House', self.level.get_square(x1+1, y1+1, x2-1, y2-1))
         self.houses.append(self.level.get_square(x1+1, y1+1, x2-1, y2-1))

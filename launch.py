@@ -10,7 +10,6 @@ import pstats
 sys.path.append(os.path.join('.', 'src'))
 
 import world
-from actor import Player
 
 PROFILE = False
 
@@ -20,8 +19,7 @@ if __name__=='__main__':
     screen.fill((255, 255, 255))
 
     #room = Room('start', 'A boring starting room')
-    player = Player('you', 'The Player')
-    world = world.World(player)
+    world = world.World()
     #world.add_objective(MainQuest(world))
     if PROFILE:
         cProfile.run('world.main_loop(screen)', 'profiledump')

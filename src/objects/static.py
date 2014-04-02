@@ -1,8 +1,8 @@
 from objects import GameObject
 
 class Door(GameObject):
-    def __init__(self, p, locked=False):
-        GameObject.__init__(self, 'door', location=p, char='+')
+    def __init__(self, p, locked=False, *args, **kwargs):
+        GameObject.__init__(self, 'door', location=p, char='+', *args, **kwargs)
         self.block_move = True
         self.block_sight = True
         self.locked = locked

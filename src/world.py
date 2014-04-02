@@ -7,18 +7,16 @@ from collections import defaultdict
 
 from renderer import Renderer
 from level import TestLevel
-from actor import Rodney
+from actor import Player
 
 class World:
-    def __init__(self, player):
+    def __init__(self):
         #self.objects = []
         #self.objects_map = defaultdict(list)
         self.objectives = []
-        self.player = player
         self.level = TestLevel(self)
+        self.player = Player(name='you', level=self.level, description='The Player', location=(self.level.width/2, self.level.height/2))
         #self.level = VillageLevel(self)
-        self.level.add_object(player)
-        player.location = (self.level.width/2, self.level.height/2)
 
         pygame.key.set_repeat(1, 50)
 
