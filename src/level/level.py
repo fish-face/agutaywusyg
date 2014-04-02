@@ -24,6 +24,9 @@ class TerrainInfo:
         for key in kwargs:
             setattr(self, key, kwargs[key])
 
+    def bumped(self, other):
+        return False
+
 wall = TerrainInfo('#', 'wall', (0,0), True, True)
 floor = TerrainInfo(u'·', 'floor', (10,10), False, False)
 
@@ -83,6 +86,8 @@ class Level:
     def set_terrain(self, p, terrain):
         x = p[0] + self.x
         y = p[1] + self.y
+        if callable(terrain):
+            terrain = terrain(p)
 
         if x < 0 or y < 0 or x >= self.width or y >= self.height:
             return

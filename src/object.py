@@ -108,6 +108,9 @@ class GameObject(object):
         for cb in self.moved_cbs:
             cb(self)
 
+    def bumped(self, other):
+        return self.block_move
+
     def add(self, other):
         """Put other inside me, if possible."""
         if other == self:
@@ -153,6 +156,9 @@ class GameObject(object):
 
         self.on_destroyed()
         self.level.remove_object(self)
+
+    def __contains__(self, other):
+        return other in self.contained
 
     def __str__(self):
         return self.name

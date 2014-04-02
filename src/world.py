@@ -26,6 +26,7 @@ class World:
         self.interpreter = CommandInterpreter(self)
         self.renderer = Renderer()
         self.clock = pygame.time.Clock()
+        self.framerates = []
 
         self.font = pygame.font.SysFont('Sans', 18)
 
@@ -74,15 +75,17 @@ class World:
     def main_loop(self, screen):
         while not self.quitting:
             delay = self.clock.tick(1000)
-            framerate = 1000.0/delay
+            self.framerates.insert(0, 1000.0/delay)
+            self.framerates = self.framerates[:100]
+            framerate = sum(self.framerates)/100.0
             self.process_events()
-            self.update()
             self.renderer.render(screen, self.level, self.player)
             screen.blit(self.font.render('%d fps' % framerate, True, (255,255,255)),
                         (1, 1))
             pygame.display.flip()
 
     def process_events(self):
+        took_turn = False
         for e in pygame.event.get():
             if e.type == pygame.QUIT:
                 self.quitting = True
@@ -104,11 +107,13 @@ class World:
                     for obj in self.get_objects_at(self.player.location):
                         if self.player.add(obj):
                             self.describe('You pick up %s' % obj.indefinite())
+                            took_turn = True
 
                 if e.key == pygame.K_d:
                     for obj in self.player.contained:
                         if self.player.remove(obj):
                             self.describe('You drop %s' % obj.indefinite())
+                            took_turn = True
 
                 if e.key == pygame.K_r:
                     self.level.setup()
@@ -120,14 +125,19 @@ class World:
                 if newloc != self.player.location:
                     if self.can_move_to(self.player, newloc):
                         self.player.location = newloc
+                        took_turn = True
                     else:
-                        enemies = self.get_objects_at(newloc, lambda o: o.flag('hostile'))
-                        if enemies:
-                            enemies[0].hit(self.player, 1)
-                        else:
-                            can_talk = self.get_objects_at(newloc, lambda o: hasattr(o, 'ask'))
-                            if can_talk:
-                                self.describe('%s says: %s' % (can_talk[0], can_talk[0].ask(self.player, 'hello')))
+                        for thing in self.level[newloc]:
+                            if thing.bumped(self.player):
+                                took_turn = True
+                                break
+                        #enemies = self.get_objects_at(newloc, lambda o: o.flag('hostile'))
+                        #if enemies:
+                        #    enemies[0].hit(self.player, 1)
+                        #else:
+                        #    can_talk = self.get_objects_at(newloc, lambda o: hasattr(o, 'ask'))
+                        #    if can_talk:
+                        #        self.describe('%s says: %s' % (can_talk[0], can_talk[0].ask(self.player, 'hello')))
 
             if e.type == pygame.MOUSEBUTTONUP:
                 if e.button == 4:
@@ -135,11 +145,14 @@ class World:
                 elif e.button == 5:
                     self.renderer.tiles.scale *= 0.9
 
+        if took_turn:
+            self.update()
+
     def describe(self, text):
         print text[0].upper() + text[1:]
 
     def update(self):
-        pass
+        self.player.update_fov()
 
 class CommandInterpreter:
     def __init__(self, world):

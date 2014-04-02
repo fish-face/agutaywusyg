@@ -31,20 +31,29 @@ class Actor(GameObject):
         """Ask another Actor about topic"""
         topic = random.choice([fact.subj.name for fact in self.knowledge] + ['hello'])
         if topic == 'hello':
-            return 'Hello, my name is ' + self.name
+            result = 'Hello, my name is ' + self.name
         else:
             facts = [fact for fact in self.knowledge if fact.subj.name == topic]
             if facts:
-                return random.choice(facts)
+                result = random.choice(facts)
             else:
-                return "I don't know anything about '%s.'" % topic
+                result = "I don't know anything about '%s.'" % topic
 
+        self.world.describe('%s says: %s' % (self.name, result))
 
     def hit(self, other, damage):
         """I was hit by other for some damage"""
         self.hp -= damage
         if self.hp <= 0:
             self.die(other)
+
+    def bumped(self, other):
+        if self.flag('hostile'):
+            self.hit(other, 1)
+        else:
+            self.ask(other, 'hello')
+
+        return self.block_move
 
     def die(self, killer):
         """I died, somehow."""
@@ -55,6 +64,7 @@ class Actor(GameObject):
         self.fov = self.level.get_fov(self.location)
         for p in self.fov:
             self.map_memory[self.level][p[1]][p[0]] = self.level[p]
+
 
 class Player(Actor):
     def __init__(self, *args, **kwargs):
@@ -76,6 +86,7 @@ class Rodney(Actor):
     def __init__(self, *args, **kwargs):
         Actor.__init__(self, name='Wizard of Yendor', char='W', *args, **kwargs)
         self.flags['hostile'] = True
+
 
 class Villager(Actor):
     def __init__(self, *args, **kwargs):
