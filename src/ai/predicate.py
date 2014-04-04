@@ -1,7 +1,22 @@
 class Predicate(object):
+    instances = []
     def __init__(self, subj, obj):
         self.subj = subj
         self.obj = obj
+
+        type(self).add(self)
+
+    @classmethod
+    def add(cls, predicate):
+        #print cls, "adding!"
+        cls.instances.append(predicate)
+
+    @classmethod
+    def remove(cls, predicate):
+        cls.instances.remove(predicate)
+
+    def destroy(self):
+        type(self).remove(self)
 
 
 class In(Predicate):

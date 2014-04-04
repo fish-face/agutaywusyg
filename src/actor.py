@@ -12,6 +12,7 @@ class Actor(GameObject):
         GameObject.__init__(self, name=name, description=description, location=location, *args, **kwargs)
 
         self.knowledge = []
+        self.wants = []
         self.relationships = None
         self.hp = 1
         self.block_move = True
@@ -22,7 +23,7 @@ class Actor(GameObject):
 
     @level.setter
     def level(self, value):
-        if value not in self.map_memory:
+        if value and value not in self.map_memory:
             self.map_memory[value] = [None] * value.height
             for y in xrange(value.height):
                 self.map_memory[value][y] = [None] * value.width
@@ -30,11 +31,15 @@ class Actor(GameObject):
 
     def ask(self, other, topic):
         """Ask another Actor about topic"""
+        wants = [fact for fact in self.knowledge if fact.obj in other.wants]
+        print wants
         topic = random.choice([fact.subj.name for fact in self.knowledge] + ['hello'])
         if topic == 'hello':
             result = 'Hello, my name is ' + self.name
         else:
             facts = [fact for fact in self.knowledge if fact.subj.name == topic]
+            if wants:
+                result = random.choice(wants)
             if facts:
                 result = random.choice(facts)
             else:

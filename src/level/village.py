@@ -1,6 +1,6 @@
 # encoding=utf-8
 
-from level import TerrainInfo, floor, wall
+from level import TerrainInfo, Region, floor, wall
 from objects import Door, Key, GameObject
 from actor import Rodney, Villager
 from generator import Generator
@@ -56,9 +56,9 @@ class VillageGenerator(Generator):
         random.shuffle(self.houses)
 
         house = self.houses.pop()
-        name = '%s\'s House' % (names.tolkien_gen.generate())
-        self.level.add_region(name, house)
-        pos = random.choice(house)
+        house.name = '%s\'s House' % (names.tolkien_gen.generate())
+        pos = random.choice(house.points)
+        self.level.add_region(house)
         rodney = Rodney(level=self.level, location=pos)
         rodney.add(amulet)
 
@@ -66,8 +66,9 @@ class VillageGenerator(Generator):
         mynames = [names.tolkien_gen.generate() for i in range(3)]
         for name in mynames:
             house = self.houses.pop()
-            self.level.add_region('%s\'s House' % (name), house)
-            pos = random.choice(house)
+            house.name = '%s\'s House' % (name)
+            pos = random.choice(house.points)
+            self.level.add_region(house)
             npc = Villager(name=name, level=self.level, location=pos)
             npcs.append(npc)
 
@@ -165,7 +166,8 @@ class VillageGenerator(Generator):
         self.level.draw_line(x2, y1, x2, y2, wall)
         self.level.draw_line(x2, y2, x1, y2, wall)
         self.level.draw_line(x1, y2, x1, y1, wall)
-        door = Door((door_x, door_y), level=self.level)
+        self.houses.append(Region('unoccupied house', self.level, self.level.get_square(x1+1, y1+1, x2-1, y2-1)))
+        door = Door((door_x, door_y), level=self.level, blocks=self.houses[-1])
         self.level.set_terrain((door_x, door_y), floor)
         path = self.level.coords_in_dir(door_x, door_y, direction, -1)
         self.level.set_terrain(path, road)
@@ -175,7 +177,6 @@ class VillageGenerator(Generator):
             door.key = key
 
         #self.level.add_region('Someone\'s House', self.level.get_square(x1+1, y1+1, x2-1, y2-1))
-        self.houses.append(self.level.get_square(x1+1, y1+1, x2-1, y2-1))
 
         self.occupied |= set(self.level.get_square(x1, y1, x2, y2))
 

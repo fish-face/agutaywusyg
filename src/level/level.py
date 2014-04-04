@@ -75,13 +75,27 @@ class Level:
         self.x += x
         self.y += y
 
-    def add_region(self, name, points):
+    def add_region(self, region, translate=True):
         """Add a region and translate by our cursor"""
-        self.regions.append(Region(name, self, [(x+self.x, y+self.y) for x, y in points]))
+        if translate:
+            region.points = [(x+self.x, y+self.y) for x, y in region.points]
+
+        self.regions.append(region)
+        #self.regions.append(Region(name, self, [(x+self.x, y+self.y) for x, y in points]))
 
     def get_regions(self, location):
         """Get regions containing the given location"""
         return [region for region in self.regions if location in region]
+
+    def get_regions_of(self, obj):
+        """Get regions containing given object or its container"""
+        return self.get_regions(self.get_coords_of(obj))
+
+    def get_coords_of(self, obj):
+        """Get coordinates of given object or its container"""
+        if not obj.container:
+            return obj.location
+        return self.get_coords_of(obj.container)
 
     def set_terrain(self, p, terrain):
         x = p[0] + self.x
@@ -323,9 +337,9 @@ class TestLevel(Level):
         knowledge = [f for facts in [obj.facts for obj in self.objects] for f in facts]
         random.shuffle(knowledge)
         for npc in [obj for obj in self.objects if isinstance(obj, Villager)]:
-            for i in range(random.randrange(1,4)):
+            for i in range(random.randrange(100,101)):
                 if not knowledge:
                     break
-                fact = knowledge.pop()
+                #fact = knowledge.pop()
                 npc.knowledge.append(fact)
 

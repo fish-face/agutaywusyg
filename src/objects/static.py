@@ -1,11 +1,23 @@
 from objects import GameObject
+from ai.predicate import Blocks
 
 class Door(GameObject):
-    def __init__(self, p, locked=False, *args, **kwargs):
+    def __init__(self, p, locked=False, blocks=None, *args, **kwargs):
         GameObject.__init__(self, 'door', location=p, char='+', *args, **kwargs)
         self.block_move = True
         self.block_sight = True
+        self.blocks = blocks
         self.locked = locked
+
+    @property
+    def locked(self):
+        return self._locked
+
+    @locked.setter
+    def locked(self, locked):
+        self._locked = locked
+        if self.blocks and locked:
+            self.blocks_fact = Blocks(self,self.blocks)
 
     def bumped(self, other):
         if self.block_move:
@@ -23,12 +35,4 @@ class Door(GameObject):
             return True
 
         return False
-
-
-class Key(GameObject):
-    def __init__(self, unlocks, *args, **kwargs):
-        GameObject.__init__(self, 'key', char='[', *args, **kwargs)
-        self.unlocks = unlocks
-
-
 

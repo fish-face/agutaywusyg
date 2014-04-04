@@ -49,7 +49,7 @@ class GameObject(object):
         self.level.move_object(self, value)
 
         self._location = value
-        regions = self.level.get_regions(value)
+        regions = self.level.get_regions_of(self)
         if regions:
             self.location_fact = predicate.In(self, regions[0])
         else:
@@ -66,9 +66,9 @@ class GameObject(object):
         if hasattr(self, '_level') and self._level:
             self._level.remove_object(self)
         self._level = value
-        # Will world ever be different? Well, take no chances regarding future-dumbness...
-        self.world = self._level.world
         if self._level:
+            # Will world ever be different? Well, take no chances regarding future-dumbness...
+            self.world = self._level.world
             self._level.add_object(self)
 
     def setup_facts(self):

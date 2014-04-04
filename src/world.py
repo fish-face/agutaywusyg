@@ -8,14 +8,18 @@ from collections import defaultdict
 from renderer import Renderer
 from level import TestLevel
 from actor import Player
+from quest import MainQuest
 
 class World:
     def __init__(self):
         #self.objects = []
         #self.objects_map = defaultdict(list)
         self.objectives = []
+        self.player = Player(name='you', level=None, description='The Player')
         self.level = TestLevel(self)
-        self.player = Player(name='you', level=self.level, description='The Player', location=(self.level.width/2, self.level.height/2))
+        self.player.level = self.level
+        self.player.location = (self.level.width/2, self.level.height/2)
+        mq = MainQuest(self)
         #self.level = VillageLevel(self)
 
         pygame.key.set_repeat(1, 50)
@@ -72,7 +76,7 @@ class World:
 
     def main_loop(self, screen):
         while not self.quitting:
-            delay = self.clock.tick(1000)
+            delay = self.clock.tick(15)
             self.framerates.insert(0, 1000.0/delay)
             self.framerates = self.framerates[:100]
             framerate = sum(self.framerates)/100.0
