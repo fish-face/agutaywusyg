@@ -9,6 +9,7 @@ from renderer import Renderer
 from level import TestLevel
 from actor import Player
 from quest import MainQuest
+from constants import *
 
 class World:
     def __init__(self):
@@ -20,6 +21,8 @@ class World:
         self.player.level = self.level
         self.player.location = (self.level.width/2, self.level.height/2)
         mq = MainQuest(self)
+        self.messages = []
+        self.state = STATE_NORMAL
         #self.level = VillageLevel(self)
 
         pygame.key.set_repeat(1, 50)
@@ -81,7 +84,7 @@ class World:
             self.framerates = self.framerates[:100]
             framerate = sum(self.framerates)/100.0
             self.process_events()
-            self.renderer.render(screen, self.level, self.player)
+            self.renderer.render(self, screen)
             screen.blit(self.font.render('%d fps' % framerate, True, (255,255,255)),
                         (1, 1))
             pygame.display.flip()
@@ -151,7 +154,7 @@ class World:
             self.update()
 
     def describe(self, text):
-        print text[0].upper() + text[1:]
+        self.messages.append(text[0].upper() + text[1:])
 
     def update(self):
         self.player.update_fov()

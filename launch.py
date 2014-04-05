@@ -15,8 +15,7 @@ PROFILE = False
 
 if __name__=='__main__':
     pygame.init()
-    screen = pygame.display.set_mode((512, 512))
-    screen.fill((255, 255, 255))
+    screen = pygame.display.set_mode((800, 600))
 
     #room = Room('start', 'A boring starting room')
     world = world.World()

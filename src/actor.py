@@ -32,7 +32,6 @@ class Actor(GameObject):
     def ask(self, other, topic):
         """Ask another Actor about topic"""
         wants = [fact for fact in self.knowledge if fact.obj in other.wants]
-        print wants
         topic = random.choice([fact.subj.name for fact in self.knowledge] + ['hello'])
         if topic == 'hello':
             result = 'Hello, my name is ' + self.name
