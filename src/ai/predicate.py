@@ -24,6 +24,12 @@ class In(Predicate):
         return '%s is in %s' % (self.subj, self.obj)
 
 
+# Maybe the following should share some behaviour with In
+class HeldBy(Predicate):
+    def __str__(self):
+        return '%s is held by %s' % (self.subj, self.obj)
+
+
 class Wants(Predicate):
     def __str__(self):
         return '%s wants %s' % (self.subj, self.obj)

@@ -124,10 +124,10 @@ class GameObject(object):
             return False
 
         if self.canfit(other):
-            other.location = None
             other.removeself()
             self.contained.append(other)
             other.container = self
+            other.location = None
 
             other.on_added()
 

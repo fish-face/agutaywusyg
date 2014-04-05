@@ -3,14 +3,18 @@
 import pygame
 
 class Renderer:
-    def __init__(self):
+    def __init__(self, surface):
         #self.tiles = Tileset("/home/fish/Pictures/M_BISON_YESSSSSSS.jpg", 24, 24)
+        self.surface = surface
         self.view_w = 0.75
         self.view_h = 0.75
         self.tiles = AsciiTiles('Deja Vu Sans Mono')
         self.centre = ()
 
-    def render(self, surface, level, player):
+    def render(self, world):
+        self.render_level(self.surface, world.level, world.player)
+
+    def render_level(self, surface, level, player):
         # Calculate viewport
         #TODO: receive surface in init?
         w = surface.get_width()
