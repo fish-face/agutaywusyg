@@ -335,11 +335,11 @@ class TestLevel(Level):
         self.set_cursor(0,0)
 
         knowledge = [f for facts in [obj.facts for obj in self.objects] for f in facts]
-        random.shuffle(knowledge)
+        #random.shuffle(knowledge)
         for npc in [obj for obj in self.objects if isinstance(obj, Villager)]:
             for i in range(random.randrange(100,101)):
                 if not knowledge:
                     break
-                #fact = knowledge.pop()
+                fact = random.choice(knowledge)
                 npc.knowledge.append(fact)
 
