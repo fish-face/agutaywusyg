@@ -44,7 +44,8 @@ class Actor(GameObject):
             else:
                 result = "I don't know anything about '%s.'" % topic
 
-        self.world.describe('%s says: %s' % (self.name, result))
+        #self.world.describe('%s says: %s' % (self.name, result))
+        return unicode(result)
 
     def hit(self, other, damage):
         """I was hit by other for some damage"""

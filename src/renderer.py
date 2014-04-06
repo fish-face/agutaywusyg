@@ -114,6 +114,18 @@ class Renderer:
         interlocutor = world.talking_to
         title = 'Talking to: %s' % (interlocutor.name)
         self.draw_text(surface, title, (255, 255, 255), surface.get_rect(), self.title_font)
+        title_height = self.title_font.get_linesize()
+        input_height = 2 * self.font.get_linesize()
+        convo_area = (MARGIN*2, title_height+MARGIN,
+                      surface.get_width()-MARGIN*3,
+                      surface.get_height()-title_height-MARGIN*2-input_height)
+        input_area = (MARGIN*2, surface.get_height()-MARGIN-input_height,
+                      surface.get_width()-MARGIN*3, input_height)
+
+        convo_text = '\n'.join(world.conversation)
+        self.draw_text(surface, convo_text, (255, 255, 255), convo_area, self.font, align_top=False)
+        input_text = 'Ask about: %s' % (world.input_text)
+        self.draw_text(surface, input_text, (255, 255, 255), input_area, self.font)
 
     def render_inventory(self, surface, player):
         surface.fill((25, 25, 25))

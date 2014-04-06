@@ -105,7 +105,7 @@ class World:
                         self.pick_location[1] -= 1
                     if e.key == pygame.K_DOWN or e.key == pygame.K_j:
                         self.pick_location[1] += 1
-                    if e.key == pygame.K_PERIOD:
+                    if e.key == pygame.K_PERIOD or e.key == pygame.K_RETURN:
                         self.pick_done()
                 elif self.state == STATE_DIALOGUE:
                     self.do_dialogue(e)
@@ -195,12 +195,22 @@ class World:
             return
 
         self.state = STATE_DIALOGUE
+        self.conversation = []
         self.talking_to = valid_targets[-1]
+        self.input_text = ''
 
     def do_dialogue(self, event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.state = STATE_NORMAL
+            elif event.key == pygame.K_RETURN:
+                self.conversation.append(self.talking_to.ask(self.player, self.input_text))
+                self.input_text = ''
+            elif event.key == pygame.K_BACKSPACE:
+                if self.input_text:
+                    self.input_text = self.input_text[:-1]
+            elif event.unicode:
+                self.input_text += event.unicode
 
     def describe(self, text):
         self.messages.append(text[0].upper() + text[1:])
