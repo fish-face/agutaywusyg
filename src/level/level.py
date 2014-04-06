@@ -309,10 +309,11 @@ class Level:
 
 
 class Region:
-    def __init__(self, name, level, points):
+    def __init__(self, name, level, points, **kwargs):
         self.name = name
         self.level = level
         self.points = points
+        self.special_points = kwargs
 
     def __str__(self):
         return self.name

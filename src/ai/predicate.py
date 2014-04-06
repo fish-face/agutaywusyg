@@ -18,6 +18,9 @@ class Predicate(object):
     def destroy(self):
         type(self).remove(self)
 
+    def __eq__(self, other):
+        return type(self) == type(other) and self.obj == other.obj and self.subj == other.subj
+
 
 class In(Predicate):
     def __str__(self):
