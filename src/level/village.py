@@ -63,7 +63,7 @@ class VillageGenerator(Generator):
         rodney.add(amulet)
 
         npcs = []
-        mynames = [names.tolkien_gen.generate() for i in range(3)]
+        mynames = [names.tolkien_gen.generate() for i in range(min(8, len(self.houses)))]
         for name in mynames:
             house = self.houses.pop()
             house.name = '%s\'s House' % (name)
