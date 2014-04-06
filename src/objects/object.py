@@ -72,11 +72,10 @@ class GameObject(object):
             self._level.add_object(self)
 
     def setup_facts(self):
-        pass
+        self.facts = []
 
-    @property
-    def facts(self):
-        return [self.location_fact]
+    def get_facts(self):
+        return self.facts + [self.location_fact]
 
     def indefinite(self):
         """Name of the object with indefinite article"""

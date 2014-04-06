@@ -39,8 +39,6 @@ class Actor(GameObject):
             result = 'Hello, my name is ' + self.name
         else:
             facts = [fact for fact in self.knowledge if text_compare_re.sub('', fact.subj.name.lower()) == topic_comp]
-            if wants:
-                result = random.choice(wants)
             if facts:
                 result = random.choice(facts)
             else:

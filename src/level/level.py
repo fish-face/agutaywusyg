@@ -334,7 +334,7 @@ class TestLevel(Level):
         VillageGenerator(self).generate()
         self.set_cursor(0,0)
 
-        knowledge = [f for facts in [obj.facts for obj in self.objects] for f in facts]
+        knowledge = [f for facts in [obj.get_facts() for obj in self.objects] for f in facts]
         #random.shuffle(knowledge)
         for npc in [obj for obj in self.objects if isinstance(obj, Villager)]:
             for i in range(random.randrange(100,101)):
