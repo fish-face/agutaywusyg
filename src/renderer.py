@@ -113,7 +113,7 @@ class Renderer:
 
     def render_messages(self, surface, messages):
         surface.fill((25, 25, 25))
-        text = '\n'.join(messages)
+        text = '\n'.join(messages[-100:])
         self.draw_text(surface, text,
                        (255, 255, 255), surface.get_rect(), self.font, False)
 
@@ -125,8 +125,24 @@ class Renderer:
         if isinstance(text, str):
             text = text.decode('utf-8')
         rect = pygame.Rect(rect)
-        y = rect.top
         line_height = font.get_linesize()
+        y = rect.top
+        msgs = self.wrap_text(text, rect.width, font)
+        max_msgs = rect.height/line_height
+
+        if align_top:
+            msgs = msgs[:max_msgs]
+        elif len(msgs) >= max_msgs:
+            msgs = msgs[len(msgs)-max_msgs:]
+
+        for s in msgs:
+            image = font.render(s, True, color)
+            surface.blit(image, (rect.left, y))
+            y += line_height
+
+        return text
+
+    def wrap_text(self, text, width, font):
         result = []
 
         while text:
@@ -137,7 +153,7 @@ class Renderer:
             #    break
 
             # determine maximum width of line
-            while text[i-1] != '\n' and font.size(text[:i])[0] < rect.width and i < len(text):
+            while text[i-1] != '\n' and font.size(text[:i])[0] < width and i < len(text):
                 i += 1
 
             if text[i-1] == '\n':
@@ -148,19 +164,7 @@ class Renderer:
                 result.append(text[:i])
             text = text[i:]
 
-        max_msgs = rect.height/line_height
-
-        if align_top:
-            result = result[:max_msgs]
-        elif len(result) >= max_msgs:
-            result = result[len(result)-max_msgs:]
-
-        for s in result:
-            image = font.render(s, True, color)
-            surface.blit(image, (rect.left, y))
-            y += line_height
-
-        return text
+        return result
 
 
 class Tileset(object):
