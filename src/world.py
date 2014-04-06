@@ -204,6 +204,7 @@ class World:
             if event.key == pygame.K_ESCAPE:
                 self.state = STATE_NORMAL
             elif event.key == pygame.K_RETURN:
+                self.conversation.append('> %s' % (self.input_text))
                 self.conversation.append(self.talking_to.ask(self.player, self.input_text))
                 self.input_text = ''
             elif event.key == pygame.K_BACKSPACE:

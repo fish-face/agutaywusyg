@@ -3,6 +3,7 @@
 import random
 
 from objects import GameObject
+from util import text_compare_re
 
 
 class Actor(GameObject):
@@ -32,11 +33,12 @@ class Actor(GameObject):
     def ask(self, other, topic):
         """Ask another Actor about topic"""
         wants = [fact for fact in self.knowledge if fact.obj in other.wants]
-        topic = random.choice([fact.subj.name for fact in self.knowledge] + ['hello'])
-        if topic == 'hello':
+        #topic = random.choice([fact.subj.name for fact in self.knowledge] + ['hello'])
+        topic_comp = text_compare_re.sub('', topic.lower())
+        if topic_comp == 'hello':
             result = 'Hello, my name is ' + self.name
         else:
-            facts = [fact for fact in self.knowledge if fact.subj.name == topic]
+            facts = [fact for fact in self.knowledge if text_compare_re.sub('', fact.subj.name.lower()) == topic_comp]
             if wants:
                 result = random.choice(wants)
             if facts:
@@ -56,10 +58,9 @@ class Actor(GameObject):
     def bumped(self, other):
         if self.flag('hostile'):
             self.hit(other, 1)
+            return True
         else:
-            self.ask(other, 'hello')
-
-        return self.block_move
+            return False
 
     def die(self, killer):
         """I died, somehow."""
