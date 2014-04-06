@@ -16,6 +16,7 @@ class Renderer:
         self.view_h = 0.75
         self.tiles = AsciiTiles('Deja Vu Sans Mono')
         self.font = pygame.font.SysFont('Deja Vu Sans Mono', 12)
+        self.title_font = pygame.font.SysFont('Deja Vu Sans Mono', 18)
         self.centre = ()
 
     def render(self, world, surface):
@@ -33,17 +34,20 @@ class Renderer:
                                         WIN_W-(MARGIN*2), WIN_H-VIEW_H-(MARGIN*3))
 
         if world.state == c.STATE_DIALOGUE:
-            self.render_dialogue(main_surface)
+            self.render_dialogue(main_surface, world)
         else:
-            self.render_level(main_surface, world.level, world.player)
+            self.render_level(main_surface, world)
 
         self.render_inventory(inventory_surf, world.player)
         self.render_messages(messages_surf, world.messages)
         self.render_stats(stats_surf, world.messages)
 
-    def render_level(self, surface, level, player):
+    def render_level(self, surface, world):
         # Calculate viewport
         #TODO: receive surface in init?
+        level = world.level
+        player = world.player
+
         w = surface.get_width()
         h = surface.get_height()
         tw = self.tiles.tile_width
@@ -102,8 +106,14 @@ class Renderer:
                         surface.blit(self.tiles.dim_overlay,
                                     (x*tw - view.left, y*th - view.top))
 
-    def render_dialogue(self, surface):
-        pass
+        if world.state == c.STATE_PICK:
+            x, y = world.pick_location
+            surface.blit(self.tiles.picker, (x*tw-view.left, y*th - view.top))
+
+    def render_dialogue(self, surface, world):
+        interlocutor = world.talking_to
+        title = 'Talking to: %s' % (interlocutor.name)
+        self.draw_text(surface, title, (255, 255, 255), surface.get_rect(), self.title_font)
 
     def render_inventory(self, surface, player):
         surface.fill((25, 25, 25))
@@ -193,6 +203,11 @@ class AsciiTiles(Tileset):
     def __init__(self, font):
         self.fontname = font
         self.scale = 1/2.0
+        self.picker = pygame.surface.Surface((int(self.tile_width), int(self.tile_height)), pygame.SRCALPHA)
+        self.picker.fill((0, 0, 0, 0))
+        pygame.draw.rect(self.picker,
+                         (255, 255, 255),
+                         (0, 0, self.tile_width, self.tile_height), 1)
 
     @property
     def scale(self):

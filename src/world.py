@@ -97,52 +97,70 @@ class World:
                 return
 
             if e.type == pygame.KEYDOWN:
-                newloc = list(self.player.location)
-                if e.key == pygame.K_LEFT or e.key == pygame.K_h:
-                    newloc[0] -= 1
-                if e.key == pygame.K_RIGHT or e.key == pygame.K_l:
-                    newloc[0] += 1
-                if e.key == pygame.K_UP or e.key == pygame.K_k:
-                    newloc[1] -= 1
-                if e.key == pygame.K_DOWN or e.key == pygame.K_j:
-                    newloc[1] += 1
-                newloc = tuple(newloc)
+                if self.state == STATE_PICK:
+                    if e.key == pygame.K_LEFT or e.key == pygame.K_h:
+                        self.pick_location[0] -= 1
+                    if e.key == pygame.K_RIGHT or e.key == pygame.K_l:
+                        self.pick_location[0] += 1
+                    if e.key == pygame.K_UP or e.key == pygame.K_k:
+                        self.pick_location[1] -= 1
+                    if e.key == pygame.K_DOWN or e.key == pygame.K_j:
+                        self.pick_location[1] += 1
+                    if e.key == pygame.K_PERIOD:
+                        self.pick_done()
+                elif self.state == STATE_DIALOGUE:
+                    self.do_dialogue(e)
+                else:
+                    newloc = list(self.player.location)
+                    if e.key == pygame.K_LEFT or e.key == pygame.K_h:
+                        newloc[0] -= 1
+                    if e.key == pygame.K_RIGHT or e.key == pygame.K_l:
+                        newloc[0] += 1
+                    if e.key == pygame.K_UP or e.key == pygame.K_k:
+                        newloc[1] -= 1
+                    if e.key == pygame.K_DOWN or e.key == pygame.K_j:
+                        newloc[1] += 1
+                    newloc = tuple(newloc)
 
-                if e.key == pygame.K_COMMA:
-                    for obj in self.get_objects_at(self.player.location):
-                        if self.player.add(obj):
-                            self.describe('You pick up %s' % obj.indefinite())
-                            took_turn = True
-
-                if e.key == pygame.K_d:
-                    for obj in self.player.contained:
-                        if self.player.remove(obj):
-                            self.describe('You drop %s' % obj.indefinite())
-                            took_turn = True
-
-                if e.key == pygame.K_r:
-                    self.level.setup()
-                    self.level.add_object(self.player)
-
-                if e.key == pygame.K_0:
-                    self.renderer.tiles.scale = 1
-
-                if newloc != self.player.location:
-                    if self.can_move_to(self.player, newloc):
-                        self.player.location = newloc
-                        took_turn = True
-                    else:
-                        for thing in self.level[newloc]:
-                            if thing.bumped(self.player):
+                    if e.key == pygame.K_COMMA:
+                        for obj in self.get_objects_at(self.player.location):
+                            if self.player.add(obj):
+                                self.describe('You pick up %s' % obj.indefinite())
                                 took_turn = True
-                                break
-                        #enemies = self.get_objects_at(newloc, lambda o: o.flag('hostile'))
-                        #if enemies:
-                        #    enemies[0].hit(self.player, 1)
-                        #else:
-                        #    can_talk = self.get_objects_at(newloc, lambda o: hasattr(o, 'ask'))
-                        #    if can_talk:
-                        #        self.describe('%s says: %s' % (can_talk[0], can_talk[0].ask(self.player, 'hello')))
+
+                    if e.key == pygame.K_d:
+                        for obj in self.player.contained:
+                            if self.player.remove(obj):
+                                self.describe('You drop %s' % obj.indefinite())
+                                took_turn = True
+
+                    if e.key == pygame.K_r:
+                        self.level.setup()
+                        self.level.add_object(self.player)
+                        self.messages = []
+
+                    if e.key == pygame.K_0:
+                        self.renderer.tiles.scale = 1
+
+                    if e.key == pygame.K_t:
+                        self.pick_target(self.talk)
+
+                    if newloc != self.player.location:
+                        if self.can_move_to(self.player, newloc):
+                            self.player.location = newloc
+                            took_turn = True
+                        else:
+                            for thing in self.level[newloc]:
+                                if thing.bumped(self.player):
+                                    took_turn = True
+                                    break
+                            #enemies = self.get_objects_at(newloc, lambda o: o.flag('hostile'))
+                            #if enemies:
+                            #    enemies[0].hit(self.player, 1)
+                            #else:
+                            #    can_talk = self.get_objects_at(newloc, lambda o: hasattr(o, 'ask'))
+                            #    if can_talk:
+                            #        self.describe('%s says: %s' % (can_talk[0], can_talk[0].ask(self.player, 'hello')))
 
             if e.type == pygame.MOUSEBUTTONUP:
                 if e.button == 4:
@@ -152,6 +170,38 @@ class World:
 
         if took_turn:
             self.update()
+
+    def pick_target(self, handler):
+        self.state = STATE_PICK
+        self.pick_handler = handler
+        self.pick_location = list(self.player.location)
+
+    def pick_done(self):
+        self.state = STATE_NORMAL
+        self.pick_handler(self.pick_location)
+
+    def talk(self, target):
+        if (abs(target[0] - self.player.location[0]) > 1 or
+            abs(target[0] - self.player.location[0]) > 1):
+            self.describe('Too far away')
+            return
+
+        targets = self.get_objects_at(target)
+        valid_targets = [t for t in targets if hasattr(t, 'ask')]
+        if not valid_targets:
+            if targets:
+                self.describe('You get no response from %s' % (targets[-1].definite()))
+            else:
+                self.describe('There\'s no-one there to talk to')
+            return
+
+        self.state = STATE_DIALOGUE
+        self.talking_to = valid_targets[-1]
+
+    def do_dialogue(self, event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                self.state = STATE_NORMAL
 
     def describe(self, text):
         self.messages.append(text[0].upper() + text[1:])
