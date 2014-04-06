@@ -16,24 +16,23 @@ class World:
         #self.objects = []
         #self.objects_map = defaultdict(list)
         self.objectives = []
-        self.player = Player(name='you', level=None, description='The Player')
-        self.level = TestLevel(self)
-        self.player.level = self.level
-        self.player.location = (self.level.width/2, self.level.height/2)
-        mq = MainQuest(self)
         self.messages = []
         self.state = STATE_NORMAL
-        #self.level = VillageLevel(self)
 
         pygame.key.set_repeat(1, 50)
 
         self.quitting = False
-        self.interpreter = CommandInterpreter(self)
         self.renderer = Renderer()
         self.clock = pygame.time.Clock()
         self.framerates = []
 
         self.font = pygame.font.SysFont('Sans', 18)
+
+        self.player = Player(name='you', level=None, description='The Player')
+        self.level = TestLevel(self)
+        self.player.level = self.level
+        self.player.location = (self.level.width/2, self.level.height/2)
+        mq = MainQuest(self)
 
     #def add_object(self, obj):
     #   if obj in self.objects:
