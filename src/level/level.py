@@ -49,6 +49,7 @@ class Level:
 
         self.set_cursor(0,0)
         self.setup()
+        self.done_setup()
 
     def setup(self, width, height, terrain=floor):
         for obj in self.objects.copy():
@@ -64,6 +65,18 @@ class Level:
 
         self.width = width
         self.height = height
+
+    def done_setup(self):
+        for obj in self.objects:
+            obj.level_setup_finished()
+
+        knowledge = [f for facts in [obj.get_facts() for obj in self.objects] for f in facts]
+        for npc in [obj for obj in self.objects if isinstance(obj, Villager)]:
+            for i in range(random.randrange(100,101)):
+                if not knowledge:
+                    break
+                fact = random.choice(knowledge)
+                npc.knowledge.append(fact)
 
     def set_cursor(self, x, y):
         """Set the level's origin; all terrain-drawing will be translated by this amount"""
@@ -81,6 +94,7 @@ class Level:
             region.points = [(x+self.x, y+self.y) for x, y in region.points]
 
         self.regions.append(region)
+        region.update()
         #self.regions.append(Region(name, self, [(x+self.x, y+self.y) for x, y in points]))
 
     def get_regions(self, location):
@@ -309,17 +323,23 @@ class Level:
 
 
 class Region:
-    def __init__(self, name, level, points, **kwargs):
+    def __init__(self, name, level, points):
         self.name = name
         self.level = level
         self.points = points
-        self.special_points = kwargs
+        self.update()
 
+    def update(self):
+        x = sum((p[0] for p in self.points))/len(self.points)
+        y = sum((p[1] for p in self.points))/len(self.points)
+        self.centre = (x, y)
+        self.area = len(self.points)
     def __str__(self):
         return self.name
 
     def __contains__(self, p):
         return p in self.points
+
 
 from village import VillageGenerator
 from actor import Villager
@@ -334,13 +354,3 @@ class TestLevel(Level):
         self.set_cursor(100,100)
         VillageGenerator(self).generate()
         self.set_cursor(0,0)
-
-        knowledge = [f for facts in [obj.get_facts() for obj in self.objects] for f in facts]
-        #random.shuffle(knowledge)
-        for npc in [obj for obj in self.objects if isinstance(obj, Villager)]:
-            for i in range(random.randrange(100,101)):
-                if not knowledge:
-                    break
-                fact = random.choice(knowledge)
-                npc.knowledge.append(fact)
-

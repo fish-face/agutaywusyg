@@ -2,6 +2,7 @@
 
 from ai import predicate
 
+
 class GameObject(object):
     """An object in the game world"""
     def __init__(self, name, level, description='', location=None, char='?'):
@@ -34,7 +35,7 @@ class GameObject(object):
         self.def_article = 'the'
         self.prefer_definite = False
 
-        self.setup_facts()
+        self.facts = []
 
     #TODO: something something locations vs containers
     #TODO: No, really???
@@ -49,12 +50,7 @@ class GameObject(object):
         self.level.move_object(self, value)
 
         self._location = value
-        regions = self.level.get_regions_of(self)
-        if regions:
-            self.location_fact = predicate.In(self, regions[0])
-        else:
-            self.location_fact = predicate.In(self, value)
-
+        self.setup_facts()
         self.on_moved()
 
     @property
@@ -71,8 +67,16 @@ class GameObject(object):
             self.world = self._level.world
             self._level.add_object(self)
 
+    def level_setup_finished(self):
+        """Anything that requires level generation to be over happens here"""
+        self.setup_facts()
+
     def setup_facts(self):
-        self.facts = []
+        regions = self.level.get_regions_of(self)
+        if regions:
+            self.location_fact = predicate.In(self, regions[0])
+        else:
+            self.location_fact = predicate.In(self, self.location)
 
     def get_facts(self):
         return self.facts + [self.location_fact]

@@ -187,7 +187,12 @@ class VillageGenerator(Generator):
 
     def lock_house(self, house):
         house.door.locked = True
-        key = Key(house.door, level=self.level, location=house.path)
+        hiding_places = [h for h in self.houses if not h.door.locked]
+        if hiding_places:
+            location = random.choice(random.choice(hiding_places).points)
+        else:
+            location = house.path
+        key = Key(house.door, level=self.level, location=location)
         house.door.key = key
-
+        print key.location_fact
 

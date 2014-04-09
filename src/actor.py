@@ -3,7 +3,7 @@
 import random
 
 from objects import GameObject
-from util import text_compare_re
+import util
 from ai.predicate import In, Wants, Solves
 
 class Actor(GameObject):
@@ -33,8 +33,8 @@ class Actor(GameObject):
     def ask(self, other, topic):
         """Ask another Actor about topic"""
         def match_name(name, string):
-            string = text_compare_re.sub('', string.lower())
-            name = text_compare_re.sub('', unicode(name).lower())
+            string = util.text_compare_re.sub('', string.lower())
+            name = util.text_compare_re.sub('', unicode(name).lower())
             return string == name
 
         if topic == 'hello':
@@ -48,12 +48,48 @@ class Actor(GameObject):
                     useful |= self.infer_useful_facts(fact.obj)
 
             if useful:
-                result = random.choice(list(useful))
+                result = self.say_fact(random.choice(list(useful)))
             else:
                 result = "I don't know anything about '%s.'" % topic
 
         return unicode(result)
 
+    def say_fact(self, fact):
+        if isinstance(fact, In):
+            result = fact.subj.indefinite()
+            location = fact.obj
+            if isinstance(location, tuple):
+                # i.e. coordinates
+                dist_2 = util.dist_2(self.location, location)
+                compass = util.compass_to(self.location, location)
+                if dist_2 < 4:
+                    result += ' is here'
+                elif dist_2 < 25:
+                    result += ' is just over there'
+                elif dist_2 < 100:
+                    result += ' is over there'
+                elif dist_2 < 10000:
+                    result += ' is nearby, to the %s' % (compass)
+                elif dist_2 < 1000000:
+                    result += ' is some way %s of here' % (compass)
+                else:
+                    result += ' is far to the %s' % (compass)
+            else:
+                result += ' is in %s' % location.name
+                dist_2 = util.dist_2(self.location, location.centre)
+                compass = util.compass_to(self.location, location.centre)
+                print dist_2, location.area, compass, location.centre
+                if dist_2 < location.area:
+                    result += ' which is nearby'
+                elif dist_2 < 4*location.area:
+                    result += ', not far to the %s' % (compass)
+                elif dist_2 < 16*location.area:
+                    result += ', which lies to the %s' % (compass)
+                else:
+                    result += ', which lies far %s of here' % (compass)
+
+            return result
+        return unicode(fact)
     def infer_useful_facts(self, obj, result=None):
         if not result:
             result = set()
