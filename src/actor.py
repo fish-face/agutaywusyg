@@ -55,6 +55,7 @@ class Actor(GameObject):
         return unicode(result)
 
     def say_fact(self, fact):
+        """Produce a sensible rendition of fact to tell the player"""
         if isinstance(fact, In):
             result = fact.subj.indefinite()
             location = fact.obj
@@ -91,6 +92,7 @@ class Actor(GameObject):
             return result
         return unicode(fact)
     def infer_useful_facts(self, obj, result=None):
+        """Given an object, return facts the player might want to know about it"""
         if not result:
             result = set()
 
@@ -104,14 +106,6 @@ class Actor(GameObject):
             elif type(fact) == Solves and fact.obj == obj:
                 result.add(fact)
                 self.infer_useful_facts(fact.subj, result)
-
-        return result
-
-    def get_related_knowledge(self, obj):
-        result = set()
-        for fact in self.knowledge:
-            if fact.obj == obj or fact.subj == obj:
-                result.add(fact)
 
         return result
 
@@ -134,6 +128,7 @@ class Actor(GameObject):
         self.destroy()
 
     def update_fov(self):
+        """I moved/level updated and I need to recalculate what I can see"""
         self.fov = self.level.get_fov(self.location)
         for p in self.fov:
             self.map_memory[self.level][p[1]][p[0]] = self.level[p]

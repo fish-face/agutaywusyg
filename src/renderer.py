@@ -21,6 +21,7 @@ class Renderer:
 
     def render(self, world, surface):
         surface.fill((0, 0, 0))
+        # Set up areas to render to
         main_surface = surface.subsurface(MARGIN, MARGIN, VIEW_W, VIEW_H)
         sidebar = surface.subsurface(VIEW_W+MARGIN, MARGIN,
                                      (WIN_W-VIEW_W-(MARGIN*2)), VIEW_H)
@@ -165,6 +166,7 @@ class Renderer:
         return text
 
     def wrap_text(self, text, width, font):
+        """Break text up into a list of strings which, when rendered with font, fit in width"""
         result = []
 
         while text:

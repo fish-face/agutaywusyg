@@ -143,16 +143,21 @@ class VillageGenerator(Generator):
         if random.random() > self.house_chance:
             return False
 
+        # Get corners of house
+
         x1, y1 = self.level.coords_in_dir(x1, y1, direction, 2)
         x1, y1 = self.level.coords_in_dir(x1, y1, (direction+1)%4, width/2)
         x2, y2 = self.level.coords_in_dir(x1, y1, direction, depth)
         x2, y2 = self.level.coords_in_dir(x2, y2, (direction-1)%4, width)
 
+        # Make sure not out of bounds
         if x2 < 0 or x2 >= self.size or y2 < 0 or y2 >= self.size:
             return False
 
+        # Place the door
         door_x, door_y = self.level.coords_in_dir(x1, y1, (direction-1)%4, width/2)
 
+        # Check we're not overlapping something
         points = self.level.get_square(x1, y1, x2, y2)
         if set(points) & self.occupied:
             return False
@@ -162,11 +167,13 @@ class VillageGenerator(Generator):
         if y2 < y1:
             y1, y2 = y2, y1
 
+        # Place the terrain
         self.level.draw_square(x1, y1, x2, y2, floor)
         self.level.draw_line(x1, y1, x2, y1, wall)
         self.level.draw_line(x2, y1, x2, y2, wall)
         self.level.draw_line(x2, y2, x1, y2, wall)
         self.level.draw_line(x1, y2, x1, y1, wall)
+        # Region name will get reset later
         region = Region('unoccupied house',
                         self.level,
                         self.level.get_square(x1+1, y1+1, x2-1, y2-1))
@@ -179,14 +186,15 @@ class VillageGenerator(Generator):
         self.level.set_terrain((door_x, door_y), floor)
         self.level.set_terrain(path, road)
 
-        #self.level.add_region('Someone\'s House', self.level.get_square(x1+1, y1+1, x2-1, y2-1))
-
         self.occupied |= set(self.level.get_square(x1, y1, x2, y2))
 
         return True
 
     def lock_house(self, house):
         house.door.locked = True
+        # Place the key in a random unlocked house
+        # TODO: allow placing in an already locked house as long as there's
+        #       no circular dependency
         hiding_places = [h for h in self.houses if not h.door.locked]
         if hiding_places:
             location = random.choice(random.choice(hiding_places).points)
@@ -194,5 +202,4 @@ class VillageGenerator(Generator):
             location = house.path
         key = Key(house.door, level=self.level, location=location)
         house.door.key = key
-        print key.location_fact
 

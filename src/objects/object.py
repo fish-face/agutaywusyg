@@ -119,6 +119,7 @@ class GameObject(object):
             cb(self)
 
     def bumped(self, other):
+        """Something else bumped into us. Return False to let other objects be bumped."""
         return False
 
     def add(self, other):

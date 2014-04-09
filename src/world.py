@@ -153,13 +153,6 @@ class World:
                                 if thing.bumped(self.player):
                                     took_turn = True
                                     break
-                            #enemies = self.get_objects_at(newloc, lambda o: o.flag('hostile'))
-                            #if enemies:
-                            #    enemies[0].hit(self.player, 1)
-                            #else:
-                            #    can_talk = self.get_objects_at(newloc, lambda o: hasattr(o, 'ask'))
-                            #    if can_talk:
-                            #        self.describe('%s says: %s' % (can_talk[0], can_talk[0].ask(self.player, 'hello')))
 
             if e.type == pygame.MOUSEBUTTONUP:
                 if e.button == 4:
@@ -171,15 +164,18 @@ class World:
             self.update()
 
     def pick_target(self, handler):
+        """Enter targeting mode"""
         self.state = STATE_PICK
         self.pick_handler = handler
         self.pick_location = list(self.player.location)
 
     def pick_done(self):
+        """Targeting mode over, do something at the target"""
         self.state = STATE_NORMAL
         self.pick_handler(self.pick_location)
 
     def talk(self, target):
+        """Try and initiate a conversation with someone"""
         if (abs(target[0] - self.player.location[0]) > 1 or
             abs(target[0] - self.player.location[0]) > 1):
             self.describe('Too far away')
@@ -200,6 +196,7 @@ class World:
         self.input_text = ''
 
     def do_dialogue(self, event):
+        """Handle having a conversation"""
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.state = STATE_NORMAL

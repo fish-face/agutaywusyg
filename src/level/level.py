@@ -51,7 +51,11 @@ class Level:
         self.setup()
         self.done_setup()
 
-    def setup(self, width, height, terrain=floor):
+    def setup(self, width=None, height=None, terrain=floor):
+        """Clear objects and initialize map. Override with level generation."""
+        if not width or not height:
+            raise TypeError('Level.setup() should be called with level dimensions')
+
         for obj in self.objects.copy():
             obj.destroy()
 
@@ -67,6 +71,7 @@ class Level:
         self.height = height
 
     def done_setup(self):
+        """Things to do after level generation"""
         for obj in self.objects:
             obj.level_setup_finished()
 
@@ -128,12 +133,14 @@ class Level:
         #       per tile, or even where it is in the tile's list.
 
     def block_sight(self, p):
+        """Return whether the tile at p blocks sight"""
         for thing in self[p]:
             if thing is None or thing.block_sight:
                 return True
         return False
 
     def get_fov(self, location):
+        """Get the set of locations that can be seen from the given location"""
         light = set((location,))
         light = {location: 1}
         radius = 20
@@ -198,6 +205,7 @@ class Level:
             self.set_terrain(p, terrain)
 
     def get_line(self, x1, y1, x2, y2):
+        """Return a list of points for the Bresenham line between the given coordinates."""
         points = []
         issteep = abs(y2-y1) > abs(x2-x1)
         if issteep:
@@ -277,6 +285,7 @@ class Level:
             return (x, y + l)
 
     def add_object(self, obj):
+        """Add object to the level's list of objects"""
         if obj in self.objects:
             return
 
@@ -304,13 +313,14 @@ class Level:
             self[location].append(obj)
 
     def get_tile(self, x, y):
+        """Return all the stuff at the given location"""
         try:
-            #return self.terraintypes[self.terrain[y][x]]
             return self.map[y][x]
         except (KeyError, IndexError):
             return None
 
     def get_tiles(self, x1, y1, x2, y2):
+        """Iterator for all the tiles in the given rectangle"""
         for y in xrange(y1, y2):
             for x in xrange(x1, x2):
                 yield (x, y, self.map[y][x])
@@ -330,6 +340,7 @@ class Region:
         self.update()
 
     def update(self):
+        """Recalculate derivable properties of the region"""
         x = sum((p[0] for p in self.points))/len(self.points)
         y = sum((p[1] for p in self.points))/len(self.points)
         self.centre = (x, y)
