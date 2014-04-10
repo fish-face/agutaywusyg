@@ -32,23 +32,23 @@ class Actor(GameObject):
 
     def ask(self, other, topic):
         """Ask another Actor about topic"""
-        def match_name(name, string):
-            string = util.text_compare_re.sub('', string.lower())
-            name = util.text_compare_re.sub('', unicode(name).lower())
-            return string == name
-
+        topic = util.canonicalise(topic)
         if topic == 'hello':
             result = 'Hello, my name is ' + self.name
         else:
             useful = set()
             for fact in self.knowledge:
-                if match_name(fact.subj, topic):
-                    useful |= self.infer_useful_facts(fact.subj)
-                if match_name(fact.obj, topic):
-                    useful |= self.infer_useful_facts(fact.obj)
+                if topic == util.canonicalise(fact.subj):
+                    useful |= self.infer_useful_facts(other, fact.subj)
+                if topic == util.canonicalise(fact.obj):
+                    useful |= self.infer_useful_facts(other, fact.obj)
 
             if useful:
-                result = self.say_fact(random.choice(list(useful)))
+                fact = random.choice(list(useful))
+                result = self.say_fact(fact)
+                if fact.subj in other or fact.obj in other:
+                    # They're carrying the object in question, tell them about it
+                    other.knowledge.append(fact)
             else:
                 result = "I don't know anything about '%s.'" % topic
 
@@ -90,7 +90,7 @@ class Actor(GameObject):
 
             return result
         return unicode(fact)
-    def infer_useful_facts(self, obj, result=None):
+    def infer_useful_facts(self, other, obj, result=None):
         """Given an object, return facts the player might want to know about it"""
         if not result:
             result = set()
@@ -99,10 +99,10 @@ class Actor(GameObject):
             if fact in result:
                 continue
 
-            if type(fact) == In and fact.subj == obj:
+            if type(fact) == In and fact.subj == obj and not (obj in other):
                 result.add(fact)
                 self.infer_useful_facts(fact.obj, result)
-            elif type(fact) == Solves and fact.obj == obj:
+            elif type(fact) == Solves and (fact.obj == obj or fact.subj == obj):
                 result.add(fact)
                 self.infer_useful_facts(fact.subj, result)
 

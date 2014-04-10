@@ -137,4 +137,14 @@ def compass_to(a, b, precision=2):
                 else:
                     result = 'S'
 
-    return compass_words[result]
+    try:
+        return compass_words[result]
+    except NameError:
+        print 'No result for', slope, above, precision
+        return compass_words['N']
+
+def canonicalise(string):
+    return text_compare_re.sub('', unicode(string).lower())
+
+def match_topic(a, b):
+    return canonicalise(a) == canonicalise(b)
