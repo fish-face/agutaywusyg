@@ -78,8 +78,8 @@ class Renderer:
         # Calculate visible tiles
         x1 = max(0, int(view.left / tw))
         y1 = max(0, int(view.top / th))
-        x2 = min(level.width, int(view.right / tw))
-        y2 = min(level.height, int(view.bottom / th))
+        x2 = min(level.width, 1+int(view.right / tw))
+        y2 = min(level.height, 1+int(view.bottom / th))
 
         # TODO: Render order!
         radius2 = 20.0 ** 2
@@ -97,6 +97,7 @@ class Renderer:
                                                             y*th - view.top))
                         #dist2 = max(1,(x - player_x)**2 + (y - player_y)**2)
                         self.tiles.dim_overlay.set_alpha(196 * player.fov[(x,y)]/radius2)
+                        #self.tiles.dim_overlay.set_alpha(0)
                         surface.blit(self.tiles.dim_overlay,
                                     (x*tw - view.left, y*th - view.top))
                     else:
@@ -230,18 +231,21 @@ class AsciiTiles(Tileset):
     @scale.setter
     def scale(self, value):
         self._scale = value
-        self.tile_width = 20 * value
-        self.tile_height = 20 * value
-        self.dim_overlay = pygame.Surface((int(self.tile_width),
-                                           int(self.tile_height)))
+        self.tile_width = int(20 * value)
+        self.tile_height = int(20 * value)
+        self.dim_overlay = pygame.Surface((self.tile_width,
+                                           self.tile_height))
         self.dim_overlay.fill((0,0,0))
-        self.font = pygame.font.SysFont(self.fontname, int(20 * value))
+        self.font = pygame.font.SysFont(self.fontname, int(18 * value))
         self.cache = {}
 
     def __getitem__(self, thing):
         char = getattr(thing, 'char', '?')
         if char not in self.cache:
-            self.cache[char] = self.font.render(char, True, (255,255,255))
+            rendered = self.font.render(char, True, (255,255,255))
+            self.cache[char] = pygame.surface.Surface((self.tile_width, self.tile_height))
+            self.cache[char].fill((128, 128, 128))
+            self.cache[char].blit(rendered, (0, 0))
             #pygame.draw.rect(self.cache[char], (32,32,32), (0,0,self.tile_width, self.tile_height+1), 1)
 
         return self.cache[char]
