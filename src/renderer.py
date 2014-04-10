@@ -245,7 +245,8 @@ class AsciiTiles(Tileset):
             rendered = self.font.render(char, True, (255,255,255))
             self.cache[char] = pygame.surface.Surface((self.tile_width, self.tile_height))
             self.cache[char].fill((128, 128, 128))
-            self.cache[char].blit(rendered, (0, 0))
+            self.cache[char].blit(rendered, ((self.tile_width-rendered.get_width())/2,
+                                             (self.tile_height-rendered.get_height())/2))
             #pygame.draw.rect(self.cache[char], (32,32,32), (0,0,self.tile_width, self.tile_height+1), 1)
 
         return self.cache[char]
