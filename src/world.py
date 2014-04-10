@@ -96,72 +96,83 @@ class World:
                 return
 
             if e.type == pygame.KEYDOWN:
-                if self.state == STATE_PICK:
-                    if e.key == pygame.K_LEFT or e.key == pygame.K_h:
-                        self.pick_location[0] -= 1
-                    if e.key == pygame.K_RIGHT or e.key == pygame.K_l:
-                        self.pick_location[0] += 1
-                    if e.key == pygame.K_UP or e.key == pygame.K_k:
-                        self.pick_location[1] -= 1
-                    if e.key == pygame.K_DOWN or e.key == pygame.K_j:
-                        self.pick_location[1] += 1
-                    if e.key == pygame.K_PERIOD or e.key == pygame.K_RETURN:
-                        self.pick_done()
-                elif self.state == STATE_DIALOGUE:
-                    self.do_dialogue(e)
-                else:
-                    newloc = list(self.player.location)
-                    if e.key == pygame.K_LEFT or e.key == pygame.K_h:
-                        newloc[0] -= 1
-                    if e.key == pygame.K_RIGHT or e.key == pygame.K_l:
-                        newloc[0] += 1
-                    if e.key == pygame.K_UP or e.key == pygame.K_k:
-                        newloc[1] -= 1
-                    if e.key == pygame.K_DOWN or e.key == pygame.K_j:
-                        newloc[1] += 1
-                    newloc = tuple(newloc)
-
-                    if e.key == pygame.K_COMMA:
-                        for obj in self.get_objects_at(self.player.location):
-                            if self.player.add(obj):
-                                self.describe('You pick up %s' % obj.indefinite())
-                                took_turn = True
-
-                    if e.key == pygame.K_d:
-                        for obj in self.player.contained:
-                            if self.player.remove(obj):
-                                self.describe('You drop %s' % obj.indefinite())
-                                took_turn = True
-
-                    if e.key == pygame.K_r:
-                        self.level.setup()
-                        self.level.add_object(self.player)
-                        self.messages = []
-
-                    if e.key == pygame.K_0:
-                        self.renderer.tiles.scale = 1
-
-                    if e.key == pygame.K_t:
-                        self.pick_target(self.talk)
-
-                    if newloc != self.player.location:
-                        if self.can_move_to(self.player, newloc):
-                            self.player.location = newloc
-                            took_turn = True
-                        else:
-                            for thing in self.level[newloc]:
-                                if thing.bumped(self.player):
-                                    took_turn = True
-                                    break
-
-            if e.type == pygame.MOUSEBUTTONUP:
-                if e.button == 4:
-                    self.renderer.tiles.scale *= 1.1
-                elif e.button == 5:
-                    self.renderer.tiles.scale *= 0.9
+                took_turn = self.keypressed(e)
+            elif e.type == pygame.MOUSEBUTTONUP:
+                took_turn = self.clicked(e)
 
         if took_turn:
             self.update()
+
+    def keypressed(self, e):
+        took_turn = False
+        if self.state == STATE_PICK:
+            if e.key == pygame.K_LEFT or e.key == pygame.K_h:
+                self.pick_location[0] -= 1
+            elif e.key == pygame.K_RIGHT or e.key == pygame.K_l:
+                self.pick_location[0] += 1
+            elif e.key == pygame.K_UP or e.key == pygame.K_k:
+                self.pick_location[1] -= 1
+            elif e.key == pygame.K_DOWN or e.key == pygame.K_j:
+                self.pick_location[1] += 1
+            elif e.key == pygame.K_PERIOD or e.key == pygame.K_RETURN:
+                self.pick_done()
+        elif self.state == STATE_DIALOGUE:
+            self.do_dialogue(e)
+        else:
+            newloc = list(self.player.location)
+            if e.key == pygame.K_LEFT or e.key == pygame.K_h:
+                newloc[0] -= 1
+            elif e.key == pygame.K_RIGHT or e.key == pygame.K_l:
+                newloc[0] += 1
+            elif e.key == pygame.K_UP or e.key == pygame.K_k:
+                newloc[1] -= 1
+            elif e.key == pygame.K_DOWN or e.key == pygame.K_j:
+                newloc[1] += 1
+            newloc = tuple(newloc)
+
+            if e.key == pygame.K_COMMA:
+                for obj in self.get_objects_at(self.player.location):
+                    if self.player.add(obj):
+                        self.describe('You pick up %s' % obj.indefinite())
+                        took_turn = True
+
+            elif e.key == pygame.K_d:
+                for obj in self.player.contained:
+                    if self.player.remove(obj):
+                        self.describe('You drop %s' % obj.indefinite())
+                        took_turn = True
+
+            elif e.key == pygame.K_r:
+                self.level.setup()
+                self.level.add_object(self.player)
+                self.messages = []
+
+            elif e.key == pygame.K_0:
+                self.renderer.tiles.scale = 1
+
+            elif e.key == pygame.K_t:
+                self.pick_target(self.talk)
+
+            elif newloc != self.player.location:
+                if self.can_move_to(self.player, newloc):
+                    self.player.location = newloc
+                    took_turn = True
+                else:
+                    for thing in self.level[newloc]:
+                        if thing.bumped(self.player):
+                            took_turn = True
+                            break
+        return took_turn
+
+    def clicked(self, e):
+        if e.button == 1:
+            pass
+        if e.button == 4:
+            self.renderer.tiles.scale *= 1.1
+        elif e.button == 5:
+            self.renderer.tiles.scale *= 0.9
+
+        return False
 
     def pick_target(self, handler):
         """Enter targeting mode"""
