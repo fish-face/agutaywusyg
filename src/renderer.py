@@ -23,8 +23,8 @@ class Renderer:
         surface.fill((0, 0, 0))
         # Set up areas to render to
         main_surface = surface.subsurface(MARGIN, MARGIN, VIEW_W, VIEW_H)
-        sidebar = surface.subsurface(VIEW_W+MARGIN, MARGIN,
-                                     (WIN_W-VIEW_W-(MARGIN*2)), VIEW_H)
+        sidebar = surface.subsurface(VIEW_W+MARGIN*2, MARGIN,
+                                     (WIN_W-VIEW_W-(MARGIN*3)), VIEW_H)
         inventory_surf = sidebar.subsurface(0, 0,
                                             sidebar.get_width(),
                                             sidebar.get_height()/2 - MARGIN/2)
