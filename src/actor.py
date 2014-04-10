@@ -79,7 +79,6 @@ class Actor(GameObject):
                 result += ' is in %s' % location.name
                 dist_2 = util.dist_2(self.location, location.centre)
                 compass = util.compass_to(self.location, location.centre)
-                print dist_2, location.area, compass, location.centre
                 if dist_2 < location.area:
                     result += ' which is nearby'
                 elif dist_2 < 4*location.area:
