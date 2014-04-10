@@ -81,9 +81,9 @@ class Actor(GameObject):
                 compass = util.compass_to(self.location, location.centre)
                 if dist_2 < location.area:
                     result += ' which is nearby'
-                elif dist_2 < 4*location.area:
+                elif dist_2 < 8*location.area:
                     result += ', not far to the %s' % (compass)
-                elif dist_2 < 16*location.area:
+                elif dist_2 < 25*location.area:
                     result += ', which lies to the %s' % (compass)
                 else:
                     result += ', which lies far %s of here' % (compass)
