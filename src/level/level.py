@@ -27,8 +27,8 @@ class TerrainInfo:
     def bumped(self, other):
         return False
 
-wall = TerrainInfo('#', 'wall', (0,0), True, True)
-floor = TerrainInfo(u'·', 'floor', (10,10), False, False)
+wall = TerrainInfo('#', 'wall', (9,3), True, True)
+floor = TerrainInfo(u'·', 'floor', (14,2), False, False)
 
 TERRAINS = {'#' : wall, '.' : floor}
 

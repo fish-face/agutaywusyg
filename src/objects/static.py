@@ -4,6 +4,7 @@ from ai.predicate import Blocks
 class Door(GameObject):
     def __init__(self, p, locked=False, blocks=None, *args, **kwargs):
         GameObject.__init__(self, 'door', location=p, char='+', *args, **kwargs)
+        self.tileindex = (1,4)
         self.block_move = True
         self.block_sight = True
         self.blocks = blocks
@@ -32,6 +33,7 @@ class Door(GameObject):
                 self.block_move = False
                 self.block_sight = False
                 self.char = 'o'
+                self.tileindex = (2,4)
             return True
 
         return False

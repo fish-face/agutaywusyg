@@ -152,9 +152,11 @@ class Player(Actor):
 class Rodney(Actor):
     def __init__(self, *args, **kwargs):
         Actor.__init__(self, name='Wizard of Yendor', char='W', *args, **kwargs)
+        self.tileindex=(1,5)
         self.flags['hostile'] = True
 
 
 class Villager(Actor):
     def __init__(self, *args, **kwargs):
         Actor.__init__(self, char='P', *args, **kwargs)
+        self.tileindex = (0,4)

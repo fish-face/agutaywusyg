@@ -8,8 +8,8 @@ from util import names
 
 import random
 
-road = TerrainInfo('.', 'road', (0,1), False, False)
-door = TerrainInfo('+', 'door', (0,1), False, False)
+road = TerrainInfo('.', 'road', (13,6), False, False)
+door = TerrainInfo('+', 'door', (1,4), False, False)
 tree = TerrainInfo('T', 'tree', (0,1), False, False)
 
 class VillageGenerator(Generator):
