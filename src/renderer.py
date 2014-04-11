@@ -1,7 +1,9 @@
 ### Renders a level to a pygame surface
 
 import pygame
+
 import constants as c
+from ai.predicate import Solves
 
 WIN_W = 800
 WIN_H = 600
@@ -132,7 +134,15 @@ class Renderer:
 
     def render_inventory(self, surface, player):
         surface.fill((25, 25, 25))
-        text = '\n'.join([obj.indefinite() for obj in player.contained])
+        text = []
+        #text = '\n'.join([obj.indefinite() for obj in player.contained])
+        for obj in player.contained:
+            line = obj.indefinite()
+            for fact in player.knowledge:
+                if type(fact) == Solves and fact.subj == obj:
+                    line += ' (solves %s)' % fact.obj
+            text.append(line)
+        text = '\n'.join(text)
         self.draw_text(surface, text,
                        (255, 255, 255), surface.get_rect(), self.font)
 

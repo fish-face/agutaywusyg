@@ -81,7 +81,7 @@ class Level:
                 if not knowledge:
                     break
                 fact = random.choice(knowledge)
-                npc.knowledge.append(fact)
+                npc.knowledge.add(fact)
 
     def set_cursor(self, x, y):
         """Set the level's origin; all terrain-drawing will be translated by this amount"""

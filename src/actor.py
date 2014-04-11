@@ -12,7 +12,7 @@ class Actor(GameObject):
 
         GameObject.__init__(self, name=name, description=description, location=location, *args, **kwargs)
 
-        self.knowledge = []
+        self.knowledge = set()
         self.wants = []
         self.relationships = None
         self.hp = 1
@@ -48,7 +48,7 @@ class Actor(GameObject):
                 result = self.say_fact(fact)
                 if fact.subj in other or fact.obj in other:
                     # They're carrying the object in question, tell them about it
-                    other.knowledge.append(fact)
+                    other.knowledge.add(fact)
             else:
                 result = "I don't know anything about '%s.'" % topic
 
