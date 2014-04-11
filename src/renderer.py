@@ -15,6 +15,7 @@ class Renderer:
         self.view_w = 0.75
         self.view_h = 0.75
         self.tiles = AsciiTiles('Deja Vu Sans Mono')
+        #self.tiles = Tileset('graphics/testtiles.png', 28, 36)
         self.font = pygame.font.SysFont('Deja Vu Sans Mono', 12)
         self.title_font = pygame.font.SysFont('Deja Vu Sans Mono', 18)
         self.centre = ()
@@ -192,37 +193,11 @@ class Renderer:
         return result
 
 
-class Tileset(object):
-    def __init__(self, filename, width, height):
-        self.tile_width = 12
-        self.tile_height = 12
-        self.load_tile_table(filename, width, height)
-
-    def load_tile_table(self, filename, width, height):
-        image = pygame.image.load(filename).convert()
-        image_width, image_height = image.get_size()
-        tile_table = []
-        for tile_x in range(0, image_width/width):
-            line = []
-            tile_table.append(line)
-            for tile_y in range(0, image_height/height):
-                rect = (tile_x*width, tile_y*height, width, height)
-                line.append(image.subsurface(rect))
-        self.tile_table = tile_table
-
-    def __getitem__(self, thing):
-        return self.tile_table[thing.tileindex[0]][thing.tileindex[0]]
-
-
-class AsciiTiles(Tileset):
-    def __init__(self, font):
-        self.fontname = font
-        self.scale = 1/2.0
-        self.picker = pygame.surface.Surface((int(self.tile_width), int(self.tile_height)), pygame.SRCALPHA)
-        self.picker.fill((0, 0, 0, 0))
-        pygame.draw.rect(self.picker,
-                         (255, 255, 255),
-                         (0, 0, self.tile_width, self.tile_height), 1)
+class BaseTileset(object):
+    def __init__(self, width, height):
+        self.base_width = width
+        self.base_height = height
+        self.scale = 1.0
 
     @property
     def scale(self):
@@ -230,12 +205,73 @@ class AsciiTiles(Tileset):
 
     @scale.setter
     def scale(self, value):
+        value = min(value, 4)
+        value = max(value, 0.0625)
         self._scale = value
-        self.tile_width = int(20 * value)
-        self.tile_height = int(20 * value)
+        self.tile_width = int(self.base_width * value)
+        self.tile_height = int(self.base_height * value)
         self.dim_overlay = pygame.Surface((self.tile_width,
                                            self.tile_height))
         self.dim_overlay.fill((0,0,0))
+        self.picker = pygame.surface.Surface((int(self.tile_width), int(self.tile_height)), pygame.SRCALPHA)
+        self.picker.fill((0, 0, 0, 0))
+        pygame.draw.rect(self.picker,
+                         (255, 255, 255),
+                         (0, 0, self.tile_width, self.tile_height), 1)
+
+class Tileset(BaseTileset):
+    def __init__(self, filename, width, height):
+        self.filename = filename
+        BaseTileset.__init__(self, width, height)
+
+    def load_tile_table(self, filename):
+        image = pygame.image.load(filename).convert()
+        orig_width, orig_height = image.get_size()
+        # Scale the image based on how large tiles we want
+        image = pygame.transform.scale(image,
+                                       (self.tile_width*orig_width/self.base_width,
+                                        self.tile_height*orig_height/self.base_height))
+        image_width, image_height = image.get_size()
+        image.set_colorkey((255, 255, 255))
+        tile_table = []
+        for tile_x in range(0, orig_width/self.base_width):
+            line = []
+            tile_table.append(line)
+            for tile_y in range(0, orig_height/self.base_height):
+                rect = (tile_x*self.tile_width, tile_y*self.tile_height,
+                        self.tile_width, self.tile_height)
+                line.append(image.subsurface(rect))
+        self.tile_table = tile_table
+
+    @property
+    def scale(self):
+        return self._scale
+
+    @scale.setter
+    def scale(self, value):
+        value = min(value, 4)
+        value = max(value, 0.0625)
+        # Constrain the real scale value to produce integer values
+        constrained = int(self.base_width * value) / float(self.base_width)
+        BaseTileset.scale.fset(self, constrained)
+        # Store the given scale value to prevent zooming getting stuck
+        self._scale = value
+        self.load_tile_table(self.filename)
+    def __getitem__(self, thing):
+        return self.tile_table[thing.tileindex[0]][thing.tileindex[1]]
+
+class AsciiTiles(Tileset):
+    def __init__(self, font):
+        self.fontname = font
+        BaseTileset.__init__(self, 20, 20)
+
+    @property
+    def scale(self):
+        return self._scale
+
+    @scale.setter
+    def scale(self, value):
+        BaseTileset.scale.fset(self, value)
         self.font = pygame.font.SysFont(self.fontname, int(18 * value))
         self.cache = {}
 
