@@ -144,8 +144,8 @@ class World:
 
             elif e.key == pygame.K_r:
                 self.level.setup()
-                self.player.location = (self.level.width/2, self.level.height/2)
                 self.level.add_object(self.player)
+                self.player.location = (self.level.width/2, self.level.height/2)
                 self.messages = []
 
             elif e.key == pygame.K_0:
