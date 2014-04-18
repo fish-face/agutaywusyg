@@ -143,9 +143,13 @@ class World:
                         took_turn = True
 
             elif e.key == pygame.K_r:
+                loc = self.player.location
+                self.player.map_memory = {}
                 self.level.setup()
                 self.level.add_object(self.player)
-                self.player.location = (self.level.width/2, self.level.height/2)
+                self.player.level = self.level
+                self.player.location = loc
+                #self.player.update_fov()
                 self.messages = []
 
             elif e.key == pygame.K_0:

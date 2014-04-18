@@ -29,6 +29,8 @@ class MainQuest(Objective):
         self.activate()
 
         amulet = world.get_object_by_name('Amulet of Yendor')
+        if amulet is None:
+            return
         amulet.added_cbs.append(self.amulet_added)
         world.player.wants.append(amulet)
         #world.player.wants.append(Wants(world.player, amulet))

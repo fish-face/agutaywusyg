@@ -354,6 +354,7 @@ class Region:
 
 
 from village import VillageGenerator
+from castle import CastleGenerator
 from actor import Villager
 import random
 
@@ -364,5 +365,6 @@ class TestLevel(Level):
         Level.setup(self, 200, 200)
 
         self.set_cursor(100,100)
-        VillageGenerator(self).generate()
+        #VillageGenerator(self).generate()
+        CastleGenerator(self).generate()
         self.set_cursor(0,0)
