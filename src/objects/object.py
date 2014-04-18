@@ -16,6 +16,7 @@ class GameObject(object):
         self.flags = {}
         #TODO: There should probably be a better way of doing flags
 
+        self.tiletype = 1
         self.tileindex = (0,0)
         self.char = char
         self.block_sight = False

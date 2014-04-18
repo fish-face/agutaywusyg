@@ -17,7 +17,7 @@ class Renderer:
         self.view_w = 0.75
         self.view_h = 0.75
         self.tiles = AsciiTiles('Deja Vu Sans Mono')
-        #self.tiles = Tileset('graphics/testtiles.png', 28, 36)
+        self.tiles = Tileset('graphics/bad%s.png', 16, 16)
         self.font = pygame.font.SysFont('Deja Vu Sans Mono', 12)
         self.title_font = pygame.font.SysFont('Deja Vu Sans Mono', 18)
         self.centre = ()
@@ -99,7 +99,7 @@ class Renderer:
                             surface.blit(self.tiles[thing], (x*tw - view.left,
                                                             y*th - view.top))
                         #dist2 = max(1,(x - player_x)**2 + (y - player_y)**2)
-                        self.tiles.dim_overlay.set_alpha(196 * player.fov[(x,y)]/radius2)
+                        self.tiles.dim_overlay.set_alpha(64 * player.fov[(x,y)]/radius2)
                         #self.tiles.dim_overlay.set_alpha(0)
                         surface.blit(self.tiles.dim_overlay,
                                     (x*tw - view.left, y*th - view.top))
@@ -107,7 +107,7 @@ class Renderer:
                         # First tile is terrain (at the moment...)
                         surface.blit(self.tiles[tile[0]], (x*tw - view.left,
                                                         y*th - view.top))
-                        self.tiles.dim_overlay.set_alpha(196)
+                        self.tiles.dim_overlay.set_alpha(64)
                         surface.blit(self.tiles.dim_overlay,
                                     (x*tw - view.left, y*th - view.top))
 
@@ -235,23 +235,25 @@ class Tileset(BaseTileset):
         BaseTileset.__init__(self, width, height)
 
     def load_tile_table(self, filename):
-        image = pygame.image.load(filename).convert()
-        orig_width, orig_height = image.get_size()
-        # Scale the image based on how large tiles we want
-        image = pygame.transform.scale(image,
-                                       (self.tile_width*orig_width/self.base_width,
-                                        self.tile_height*orig_height/self.base_height))
-        image_width, image_height = image.get_size()
-        image.set_colorkey((255, 255, 255))
-        tile_table = []
-        for tile_x in range(0, orig_width/self.base_width):
-            line = []
-            tile_table.append(line)
-            for tile_y in range(0, orig_height/self.base_height):
-                rect = (tile_x*self.tile_width, tile_y*self.tile_height,
-                        self.tile_width, self.tile_height)
-                line.append(image.subsurface(rect))
-        self.tile_table = tile_table
+        self.tile_table = []
+        for i, name in enumerate(('terrain', 'objects', 'actors')):
+            image = pygame.image.load(filename % name).convert_alpha()
+            orig_width, orig_height = image.get_size()
+            # Scale the image based on how large tiles we want
+            image = pygame.transform.scale(image,
+                                        (self.tile_width*orig_width/self.base_width,
+                                            self.tile_height*orig_height/self.base_height))
+            image_width, image_height = image.get_size()
+            #image.set_colorkey((255, 255, 255))
+            tile_table = []
+            for tile_x in range(0, orig_width/self.base_width):
+                line = []
+                tile_table.append(line)
+                for tile_y in range(0, orig_height/self.base_height):
+                    rect = (tile_x*self.tile_width, tile_y*self.tile_height,
+                            self.tile_width, self.tile_height)
+                    line.append(image.subsurface(rect))
+            self.tile_table.append(tile_table)
 
     @property
     def scale(self):
@@ -268,7 +270,7 @@ class Tileset(BaseTileset):
         self._scale = value
         self.load_tile_table(self.filename)
     def __getitem__(self, thing):
-        return self.tile_table[thing.tileindex[0]][thing.tileindex[1]]
+        return self.tile_table[thing.tiletype][thing.tileindex[0]][thing.tileindex[1]]
 
 class AsciiTiles(Tileset):
     def __init__(self, font):

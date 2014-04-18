@@ -17,6 +17,7 @@ class TerrainInfo:
     def __init__(self, char, name, index, block_move, block_sight, **kwargs):
         self.char = char
         self.name = name
+        self.tiletype = 0
         self.tileindex = index
         self.block_move = block_move
         self.block_sight = block_sight
@@ -27,8 +28,8 @@ class TerrainInfo:
     def bumped(self, other):
         return False
 
-wall = TerrainInfo('#', 'wall', (9,3), True, True)
-floor = TerrainInfo(u'·', 'floor', (14,2), False, False)
+wall = TerrainInfo('#', 'wall', (0,0), True, True)
+floor = TerrainInfo(u'·', 'floor', (1,0), False, False)
 
 TERRAINS = {'#' : wall, '.' : floor}
 

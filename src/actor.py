@@ -12,6 +12,7 @@ class Actor(GameObject):
 
         GameObject.__init__(self, name=name, description=description, location=location, *args, **kwargs)
 
+        self.tiletype = 2
         self.knowledge = set()
         self.wants = []
         self.relationships = None
@@ -152,7 +153,7 @@ class Player(Actor):
 class Rodney(Actor):
     def __init__(self, *args, **kwargs):
         Actor.__init__(self, name='Wizard of Yendor', char='W', *args, **kwargs)
-        self.tileindex=(1,5)
+        self.tileindex=(1,0)
         self.flags['hostile'] = True
 
 
