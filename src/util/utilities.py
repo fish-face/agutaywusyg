@@ -44,120 +44,39 @@ compass_words = {
     'WSW': 'West-southwest',
 }
 
-def compass_to(a, b, precision=2):
-    above = True if a[1] > b[1] else False
-    try:
-        slope = float(a[1]-b[1])/(b[0]-a[0])
-    except ZeroDivisionError:
-        if above:
-            result = 'N'
-        else:
-            result = 'S'
-    else:
-        if precision == 3:
-            if slope >= 0 and above:
-                if slope < EENE:
-                    result = 'E'
-                elif slope < NENE:
-                    result = 'ENE'
-                elif slope < ENNE:
-                    result = 'NE'
-                elif slope < NNNE:
-                    result = 'NNE'
-                else:
-                    result = 'N'
-            elif slope >= 0 and not above:
-                if slope < EENE:
-                    result = 'W'
-                elif slope < NENE:
-                    result = 'WSW'
-                elif slope < ENNE:
-                    result = 'SW'
-                elif slope < NNNE:
-                    result = 'SSW'
-                else:
-                    result = 'S'
-            elif slope < 0 and above:
-                if slope > EENE:
-                    result = 'W'
-                elif slope > NENE:
-                    result = 'WNW'
-                elif slope > ENNE:
-                    result = 'NW'
-                elif slope > NNNE:
-                    result = 'NNW'
-                else:
-                    result = 'N'
-            elif slope < 0 and not above:
-                if slope > EENE:
-                    result = 'E'
-                elif slope > NENE:
-                    result = 'ESE'
-                elif slope > ENNE:
-                    result = 'SE'
-                elif slope > NNNE:
-                    result = 'SSE'
-                else:
-                    result = 'S'
-        elif precision == 2:
-            if slope > 0 and above:
-                if slope < ENE:
-                    result = 'E'
-                elif slope < NNE:
-                    result = 'NE'
-                else:
-                    result = 'N'
-            elif slope > 0 and not above:
-                if slope < ENE:
-                    result = 'W'
-                elif slope < NNE:
-                    result = 'SW'
-                else:
-                    result = 'S'
-            elif slope < 0 and above:
-                if slope > ENE:
-                    result = 'W'
-                elif slope > NNE:
-                    result = 'NW'
-                else:
-                    result = 'N'
-            elif slope < 0 and not above:
-                if slope > ENE:
-                    result = 'E'
-                elif slope > NNE:
-                    result = 'SE'
-                else:
-                    result = 'S'
-        elif precision == 1:
-            if slope > 0 and above:
-                if slope < 1:
-                    result = 'E'
-                else:
-                    result = 'N'
-            elif slope > 0 and not above:
-                if slope < 1:
-                    result = 'W'
-                else:
-                    result = 'S'
-            elif slope < 0 and above:
-                if slope > 1:
-                    result = 'W'
-                else:
-                    result = 'N'
-            elif slope < 0 and not above:
-                if slope > 1:
-                    result = 'E'
-                else:
-                    result = 'S'
+compass_letters = (
+    "E", "ESE", "SE", "SSE",
+    "S", "SSW", "SW", "WSW",
+    "W", "WNW", "NW", "NNW",
+    "N", "NNE", "NE", "ENE",
+)
 
-    try:
-        return compass_words[result]
-    except NameError:
-        print 'No result for', slope, above, precision
-        return compass_words['N']
+compass_angles = dict(
+    (letters, math.pi * 2 / len(compass_letters) * i)
+    for i, letters in enumerate(compass_letters))
+
+def angle_diff(a, b):
+    return (b - a + math.pi) % (math.pi * 2) - math.pi
+
+def compass_to(a, b, precision=2):
+    angle = math.atan2(b[1] - a[1], b[0] - a[0])
+
+    def angle_distance(item):
+        if len(item[0]) > precision:
+            return math.pi
+
+        return abs(angle_diff(angle, item[1]))
+
+    nearest = sorted(compass_angles.items(), key=angle_distance)
+
+    return nearest[0][0]
 
 def canonicalise(string):
     return text_compare_re.sub('', unicode(string).lower())
 
 def match_topic(a, b):
     return canonicalise(a) == canonicalise(b)
+
+if __name__ == "__main__":
+    point = [int(coord) for coord in raw_input("x,y").split(",")]
+    print compass_to((0, 0), point, 1)
