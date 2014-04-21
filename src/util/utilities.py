@@ -1,9 +1,22 @@
 import re
 import math
 
-text_compare_re = re.compile('[\W_]+')
+def points_in(rect):
+    return [(x, y) for y in xrange(rect.top, rect.bottom+1) for x in xrange(rect.left, rect.right+1)]
+
+
 def dist_2(a, b):
     return (b[0]-a[0])**2 + (b[1]-a[1])**2
+
+
+def manhattan(a, b):
+    return abs(b[0]-a[0]) + abs(b[1]-a[1])
+
+
+def sup_dist(a, b):
+    return max(abs(b[0]-a[0]), abs(b[1]-a[1]))
+
+text_compare_re = re.compile('[\W_]+')
 
 ENE = math.tan(math.pi/8.0)
 NNE = math.tan(3*math.pi/8.0)
