@@ -1,8 +1,13 @@
 import re
 import math
+from pygame import Rect
+
 
 def points_in(rect):
-    return [(x, y) for y in xrange(rect.top, rect.bottom+1) for x in xrange(rect.left, rect.right+1)]
+    if isinstance(rect, Rect):
+        return [(x, y) for y in xrange(rect.top, rect.bottom+1) for x in xrange(rect.left, rect.right+1)]
+    else:
+        return rect
 
 
 def dist_2(a, b):

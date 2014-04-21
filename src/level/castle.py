@@ -1,3 +1,5 @@
+#encoding=utf-8
+
 import random
 from collections import defaultdict
 from pygame import Rect
@@ -10,6 +12,7 @@ import util
 
 grass = TerrainInfo('v', 'grass', (3,0), False, False)
 window = TerrainInfo('o', 'window', (0,1), True, False)
+path = TerrainInfo(u'·', 'path', (2,0), False, False)
 
 GH_PROJECT = 0
 
@@ -43,24 +46,66 @@ class BuildingGraph(object):
         self.edges = [(i,i+1) for i in range(len(points)-1)]
 
     def make_buildings(self):
-        rects = [Rect(p[0], p[1], 1, 1) for p in self.points]
+        rects = [Rect(p[0], p[1], 0, 0) for p in self.points]
         growing = [[True, True, True, True] for p in self.points]
+        amalgamate_limit = 5
         changed = True
         # Expand rectangles around the points we picked
         while changed:
             changed = False
             for i, r in enumerate(rects):
                 for d in [UP, DOWN, LEFT, RIGHT]:
-                    changed |= self.grow_rect(r, growing[i], rects, d)
+                    changed |= self.grow_rect(i, r, growing[i], rects, d)
+
+        # Randomly shrink some rectangles
+        #for r in rects:
+        #    for d in [UP, DOWN, LEFT, RIGHT]:
+        #        if random.randrange(40) == 0:
+        #            if d == LEFT:
+        #                r.left += 2
+        #                r.width -= 2
+        #            elif d == RIGHT:
+        #                r.width -= 2
+        #            elif d == DOWN:
+        #                r.height -= 2
+        #            elif d == UP:
+        #                r.top += 2
+        #                r.height -= 2
+
+        # Try and amalgamate small rectangles
+        merges = [None] * len(rects)
+        for i, r in enumerate(rects):
+            if isinstance(r, Rect) and r.width < amalgamate_limit:
+                if self.merge_rect(i, r, merges, growing[i], rects, UP):
+                    continue
+                if self.merge_rect(i, r, merges, growing[i], rects, DOWN):
+                    continue
+            if isinstance(r, Rect) and r.height < amalgamate_limit:
+                if self.merge_rect(i, r, merges, growing[i], rects, LEFT):
+                    continue
+                if self.merge_rect(i, r, merges, growing[i], rects, RIGHT):
+                    continue
+            print r if isinstance(r, Rect) else 'list', growing[i]
+
+        rects = [r for i, r in enumerate(rects) if not isinstance(r, Rect) or merges[i] is None]
 
         return rects
 
-    def grow_rect(self, rect, growth, rects, direction):
+    def merge_rect(self, i, rect, merges, growth, rects, direction):
+        if isinstance(growth[direction], list):
+            for j in growth[direction]:
+                if merges[j] is not None:
+                    j = merges[j]
+                #if not isinstance(rects[j], Rect) or rects[j].width and rects[j].height:
+                rects[j] = util.points_in(rects[j]) + util.points_in(rect)
+                merges[i] = j
+                return True
+        return False
+    def grow_rect(self, i, rect, growth, rects, direction):
         """Tries to grow a rectangle in the specified direction
 
         Returns whether the growth succeeded"""
-        changed = False
-        if growth[direction]:
+        if growth[direction] == True:
             left, top, width, height = rect.x, rect.y, rect.w, rect.h
             if direction == LEFT:
                 left -= 1
@@ -73,18 +118,27 @@ class BuildingGraph(object):
                 top -= 1
                 height += 1
             new = Rect(left, top, width, height)
-            if not (set(util.points_in(new)) - self.space) and len(new.collidelistall(rects)) == 1:
+            building_collisions = new.collidelistall(rects)
+            try:
+                building_collisions.remove(i)
+            except ValueError:
+                pass
+            if not (set(util.points_in(new)) - self.space) and len(building_collisions) == 0:
                 rect.left = left
                 rect.width = width
                 rect.top = top
                 rect.height = height
-                changed = True
                 #if rect.width >= 8 and rect.height >= 8 and random.randrange(5) == 0:
                 #    growth[direction] = False
+                return True
             else:
-                growth[direction] = False
+                if building_collisions:
+                    # If we collided with a building, make a note.
+                    growth[direction] = building_collisions
+                else:
+                    growth[direction] = False
 
-        return changed
+        return False
 
     def get_wrecked(self, boundary):
         horizontals = [boundary.left, boundary.right]
@@ -207,31 +261,55 @@ class CastleGenerator(Generator):
 
         keep_style = random.choice(KEEP_STYLES)
         if keep_style == KEEP_CENTRE:
-            self.level.translate(0, (self.height-k_h)/2)
+            k_x, k_y = 0, (self.height-k_h)/2
         elif keep_style == KEEP_SIDE:
             side = random.choice((-1, 1))
-            self.level.translate((self.width-k_w)/2*side, (self.height-k_h))
+            k_x, k_y = (self.width-k_w)/2*side, (self.height-k_h)
+
 
         # Draw keep
+        self.level.translate(k_x, k_y)
+
         self.fourwalls(k_w, k_h,
                        self.turretsize,
                        self.wallwidth+1,
                        self.turret_project,
                        k_gs, 0, 4)
 
+        self.level.translate(-k_x, -k_y)
+
+        path_to_keep = self.get_path(0, 1, k_x, k_y, self.gatesize, k_gs)
+        for p in path_to_keep:
+            self.level.set_terrain(p, path)
+
         # Calculate valid space for buildings
         interior = Rect(-self.width/2+self.wallwidth+1, self.wallwidth,
-                        self.width-self.wallwidth*2, self.height-self.wallwidth*2+1)
+                        self.width-self.wallwidth*2-1, self.height-self.wallwidth*2)
         space = set(util.points_in(interior))
+
+        tower = Rect(-self.width/2+1-self.turret_project, -self.turret_project,
+                     self.turretsize, self.turretsize)
+        space -= set(util.points_in(tower))
+        tower = Rect(self.width/2-self.turretsize+self.turret_project, -self.turret_project,
+                     self.turretsize, self.turretsize)
+        space -= set(util.points_in(tower))
+        tower = Rect(-self.width/2+1-self.turret_project, self.height-self.turretsize+self.turret_project,
+                     self.turretsize, self.turretsize)
+        space -= set(util.points_in(tower))
+        tower = Rect(self.width/2-self.turretsize+self.turret_project,
+                     self.height-self.turretsize+self.turret_project,
+                     self.turretsize, self.turretsize)
+        space -= set(util.points_in(tower))
+
+        self.expand(path_to_keep, 2)
+        space -= set(path_to_keep)
 
         margin = 6
         if keep_style == KEEP_CENTRE:
-            self.level.translate(0, -((self.height-k_h)/2))
             around_keep = Rect(-k_w/2-(self.wallwidth+margin), self.height/2-k_h/2-self.wallwidth-margin,
                                k_w+(self.wallwidth+margin)*2, k_h+(self.wallwidth+margin)*2)
             space -= set(util.points_in(around_keep))
         elif keep_style == KEEP_SIDE:
-            self.level.translate(-((self.width-k_w)/2*side), -(self.height-k_h))
             if side == -1:
                 left = -self.width/2+self.wallwidth
                 width = k_w + margin
@@ -242,23 +320,22 @@ class CastleGenerator(Generator):
                                width, self.height)
             space -= set(util.points_in(around_keep))
 
-        #for p in space:
-        #    self.level.set_terrain(p, grass)
-
         # Create buildings
         graph = BuildingGraph(Rect(-self.width/2+self.wallwidth, self.wallwidth,
                                    self.width-2*self.wallwidth, self.height-2*self.wallwidth), space, 20, 1)
 
         # Draw building walls
         for border in graph.borders:
-            self.level.draw_line(border.left, border.top,
-                                 border.left, border.bottom, wall)
-            self.level.draw_line(border.left, border.bottom,
-                                 border.right, border.bottom, wall)
-            self.level.draw_line(border.right, border.bottom,
-                                 border.right, border.top, wall)
-            self.level.draw_line(border.right, border.top,
-                                 border.left, border.top, wall)
+            #self.draw_set(util.points_in(border), grass)
+            self.draw_set(self.outline(border), wall)
+            #self.level.draw_line(border.left, border.top,
+            #                     border.left, border.bottom, wall)
+            #self.level.draw_line(border.left, border.bottom,
+            #                     border.right, border.bottom, wall)
+            #self.level.draw_line(border.right, border.bottom,
+            #                     border.right, border.top, wall)
+            #self.level.draw_line(border.right, border.top,
+            #                     border.left, border.top, wall)
 
     def fourwalls(self, width, height, turretsize, wallwidth, turret_project, gatesize, gatehouse_project, turrets):
         turret_inner = turretsize - turret_project
@@ -341,3 +418,14 @@ class CastleGenerator(Generator):
                                gatesize/2+1, height-projection, wall)
         self.level.draw_square(width/2-self.wallwidth, gateheight-1,
                                gatesize/2+2, height-projection-1, floor)
+
+    def get_path(self, x1, y1, x2, y2, w1, w2):
+        path = []
+        for offset in range(-w1/2+1, 1+w1/2):
+            path += self.level.get_line(x1+offset, y1, x1+offset, (y1+y2)/2)
+            path += self.level.get_line(x1, (y1+y2)/2+offset, (x1+x2)/2, (y1+y2)/2+offset)
+        for offset in range(-w2/2+1, 1+w2/2):
+            path += self.level.get_line((x1+x2)/2, (y1+y2)/2+offset, x2, (y1+y2)/2+offset)
+            path += self.level.get_line(x2+offset, (y1+y2)/2, x2+offset, y2)
+
+        return set(path)
