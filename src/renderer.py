@@ -14,6 +14,7 @@ MARGIN = 8
 class Renderer:
     def __init__(self):
         #self.tiles = Tileset("/home/fish/Pictures/M_BISON_YESSSSSSS.jpg", 24, 24)
+        self.level_surf = pygame.Surface((VIEW_W, VIEW_H))
         self.view_w = 0.75
         self.view_h = 0.75
         self.tiles = AsciiTiles('Deja Vu Sans Mono')
@@ -40,15 +41,16 @@ class Renderer:
         if world.state == c.STATE_DIALOGUE:
             self.render_dialogue(main_surface, world)
         else:
-            self.render_level(main_surface, world)
+            main_surface.blit(self.level_surf, (0, 0))
 
         self.render_inventory(inventory_surf, world.player)
         self.render_messages(messages_surf, world.messages)
         self.render_stats(stats_surf, world.messages)
 
-    def render_level(self, surface, world):
+    def render_level(self, world):
         # Calculate viewport
         #TODO: receive surface in init?
+        surface = self.level_surf
         level = world.level
         player = world.player
 
@@ -96,8 +98,7 @@ class Renderer:
                     tile = row[x]
                     if (x, y) in player.fov:
                         for thing in tile:
-                            surface.blit(self.tiles[thing], (x*tw - view.left,
-                                                            y*th - view.top))
+                            surface.blit(self.tiles[thing], (x*tw - view.left, y*th - view.top))
                         #dist2 = max(1,(x - player_x)**2 + (y - player_y)**2)
                         self.tiles.dim_overlay.set_alpha(64 * player.fov[(x,y)]/radius2)
                         #self.tiles.dim_overlay.set_alpha(0)

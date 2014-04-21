@@ -77,11 +77,12 @@ class World:
         self.quitting = True
 
     def main_loop(self, screen):
+        self.update()
         while not self.quitting:
             delay = self.clock.tick(15)
             self.framerates.insert(0, 1000.0/delay)
-            self.framerates = self.framerates[:100]
-            framerate = sum(self.framerates)/100.0
+            self.framerates = self.framerates[:50]
+            framerate = sum(self.framerates)/50.0
             self.process_events()
             self.renderer.render(self, screen)
             screen.blit(self.font.render('%d fps' % framerate, True, (255,255,255)),
@@ -150,10 +151,16 @@ class World:
                 self.player.level = self.level
                 self.player.location = loc
                 #self.player.update_fov()
+                self.renderer.render_level(self)
                 self.messages = []
 
             elif e.key == pygame.K_0:
                 self.renderer.tiles.scale = 1
+                self.renderer.render_level(self)
+
+            elif e.key == pygame.K_9:
+                self.renderer.tiles.scale = 1/4.0
+                self.renderer.render_level(self)
 
             elif e.key == pygame.K_t:
                 self.pick_target(self.talk)
@@ -174,8 +181,10 @@ class World:
             pass
         if e.button == 4:
             self.renderer.tiles.scale *= 1.1
+            self.renderer.render_level(self)
         elif e.button == 5:
             self.renderer.tiles.scale *= 0.9
+            self.renderer.render_level(self)
 
         return False
 
@@ -231,6 +240,7 @@ class World:
 
     def update(self):
         self.player.update_fov()
+        self.renderer.render_level(self)
 
 class CommandInterpreter:
     def __init__(self, world):
