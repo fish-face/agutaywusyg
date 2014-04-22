@@ -2,8 +2,6 @@
 
 ### Levels define the terrain making up an area
 
-from constants import *
-
 TEST_LEVEL = (
     "##########",
     "#....#...#",
@@ -201,58 +199,6 @@ class Level:
             if blocked:
                 break
 
-    def draw_line(self, x1, y1, x2, y2, terrain):
-        for p in self.get_line(x1, y1, x2, y2):
-            self.set_terrain(p, terrain)
-
-    def get_line(self, x1, y1, x2, y2):
-        """Return a list of points for the Bresenham line between the given coordinates."""
-        points = []
-        issteep = abs(y2-y1) > abs(x2-x1)
-        if issteep:
-            x1, y1 = y1, x1
-            x2, y2 = y2, x2
-        rev = False
-        if x1 > x2:
-            x1, x2 = x2, x1
-            y1, y2 = y2, y1
-            rev = True
-        deltax = x2 - x1
-        deltay = abs(y2-y1)
-        error = int(deltax / 2)
-        y = y1
-        ystep = None
-        if y1 < y2:
-            ystep = 1
-        else:
-            ystep = -1
-        for x in range(x1, x2 + 1):
-            if issteep:
-                points.append((y, x))
-            else:
-                points.append((x, y))
-            error -= deltay
-            if error < 0:
-                y += ystep
-                error += deltax
-        # Reverse the list if the coordinates were reversed
-        if rev:
-            points.reverse()
-        return points
-
-    def get_square(self, x1, y1, x2, y2):
-        """Get all points in the described rectangle, inclusive"""
-        if y1 > y2:
-            y1, y2 = y2, y1
-        if x1 > x2:
-            x1, x2 = x2, x1
-        return [(x,y) for x in xrange(x1,x2+1) for y in xrange(y1,y2+1)]
-
-    def draw_square(self, x1, y1, x2, y2, terrain):
-        """Draw a filled rectangle with the given coordinates, inclusive"""
-        for p in self.get_square(x1, y1, x2, y2):
-            self.set_terrain(p, terrain)
-
     def is_connected(self, points):
         if not points:
             return False
@@ -273,17 +219,6 @@ class Level:
         self.get_flood(x-1, y, points, connected)
         self.get_flood(x, y+1, points, connected)
         self.get_flood(x, y-1, points, connected)
-
-    def coords_in_dir(self, x, y, d, l):
-        """Return coordinates offset by l in cardinal direction d"""
-        if d == RIGHT:
-            return (x + l, y)
-        elif d == UP:
-            return (x, y - l)
-        elif d == LEFT:
-            return (x - l, y)
-        elif d == DOWN:
-            return (x, y + l)
 
     def add_object(self, obj):
         """Add object to the level's list of objects"""

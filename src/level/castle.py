@@ -97,7 +97,7 @@ class BuildingGraph(object):
                 if merges[j] is not None:
                     j = merges[j]
                 #if not isinstance(rects[j], Rect) or rects[j].width and rects[j].height:
-                rects[j] = util.points_in(rects[j]) + util.points_in(rect)
+                rects[j] = Generator.points_in(rects[j]) + Generator.points_in(rect)
                 merges[i] = j
                 return True
         return False
@@ -123,7 +123,7 @@ class BuildingGraph(object):
                 building_collisions.remove(i)
             except ValueError:
                 pass
-            if not (set(util.points_in(new)) - self.space) and len(building_collisions) == 0:
+            if not (set(Generator.points_in(new)) - self.space) and len(building_collisions) == 0:
                 rect.left = left
                 rect.width = width
                 rect.top = top
@@ -200,7 +200,7 @@ class BuildingGraph(object):
                 if d < dist:
                     dist = d
                     p = q
-            nearest[p] |= set(util.points_in(rect))
+            nearest[p] |= set(self.points_in(rect))
 
         for (i, p) in enumerate(self.points):
             for q in self.points[i+1:]:
@@ -240,7 +240,7 @@ class CastleGenerator(Generator):
 
     def generate(self):
         # Fill with grass
-        self.level.draw_square(-self.width/2-self.turret_project-10,
+        self.draw_square(-self.width/2-self.turret_project-10,
                                -self.turret_project-10,
                                self.width/2-self.turret_project+11,
                                self.height+self.turret_project+10, grass)
@@ -285,21 +285,21 @@ class CastleGenerator(Generator):
         # Calculate valid space for buildings
         interior = Rect(-self.width/2+self.wallwidth+1, self.wallwidth,
                         self.width-self.wallwidth*2-1, self.height-self.wallwidth*2)
-        space = set(util.points_in(interior))
+        space = set(self.points_in(interior))
 
         tower = Rect(-self.width/2+1-self.turret_project, -self.turret_project,
                      self.turretsize, self.turretsize)
-        space -= set(util.points_in(tower))
+        space -= set(self.points_in(tower))
         tower = Rect(self.width/2-self.turretsize+self.turret_project, -self.turret_project,
                      self.turretsize, self.turretsize)
-        space -= set(util.points_in(tower))
+        space -= set(self.points_in(tower))
         tower = Rect(-self.width/2+1-self.turret_project, self.height-self.turretsize+self.turret_project,
                      self.turretsize, self.turretsize)
-        space -= set(util.points_in(tower))
+        space -= set(self.points_in(tower))
         tower = Rect(self.width/2-self.turretsize+self.turret_project,
                      self.height-self.turretsize+self.turret_project,
                      self.turretsize, self.turretsize)
-        space -= set(util.points_in(tower))
+        space -= set(self.points_in(tower))
 
         self.expand(path_to_keep, 2)
         space -= set(path_to_keep)
@@ -308,7 +308,7 @@ class CastleGenerator(Generator):
         if keep_style == KEEP_CENTRE:
             around_keep = Rect(-k_w/2-(self.wallwidth+margin), self.height/2-k_h/2-self.wallwidth-margin,
                                k_w+(self.wallwidth+margin)*2, k_h+(self.wallwidth+margin)*2)
-            space -= set(util.points_in(around_keep))
+            space -= set(self.points_in(around_keep))
         elif keep_style == KEEP_SIDE:
             if side == -1:
                 left = -self.width/2+self.wallwidth
@@ -318,7 +318,7 @@ class CastleGenerator(Generator):
                 width = k_w + margin
             around_keep = Rect(left, self.height/2-self.wallwidth-margin,
                                width, self.height)
-            space -= set(util.points_in(around_keep))
+            space -= set(self.points_in(around_keep))
 
         # Create buildings
         graph = BuildingGraph(Rect(-self.width/2+self.wallwidth, self.wallwidth,
@@ -326,36 +326,36 @@ class CastleGenerator(Generator):
 
         # Draw building walls
         for border in graph.borders:
-            #self.draw_set(util.points_in(border), grass)
-            self.draw_set(self.outline(border), wall)
-            #self.level.draw_line(border.left, border.top,
+            #self.draw_set(self.points_in(border), grass)
+            self.draw_points(self.outline(border), wall)
+            #self.draw_line(border.left, border.top,
             #                     border.left, border.bottom, wall)
-            #self.level.draw_line(border.left, border.bottom,
+            #self.draw_line(border.left, border.bottom,
             #                     border.right, border.bottom, wall)
-            #self.level.draw_line(border.right, border.bottom,
+            #self.draw_line(border.right, border.bottom,
             #                     border.right, border.top, wall)
-            #self.level.draw_line(border.right, border.top,
+            #self.draw_line(border.right, border.top,
             #                     border.left, border.top, wall)
 
     def fourwalls(self, width, height, turretsize, wallwidth, turret_project, gatesize, gatehouse_project, turrets):
         turret_inner = turretsize - turret_project
 
-        self.level.draw_square(-width/2+1, 1, width/2, height, floor)
+        self.draw_square(-width/2+1, 1, width/2, height, floor)
         # Front wall
-        self.level.draw_square(-width/2+(turret_inner), 0,
+        self.draw_square(-width/2+(turret_inner), 0,
                                width/2-(turret_inner)+1, wallwidth-1, wall)
-        self.level.draw_square(-gatesize/2+1, 0, gatesize/2, wallwidth-1, floor)
+        self.draw_square(-gatesize/2+1, 0, gatesize/2, wallwidth-1, floor)
 
         # Front left turret
         self.level.translate(-((width+1)/2), 0)
         self.tower(-turret_project+1, -turret_project, turretsize)
         # Left wall
-        self.level.draw_square(1, turret_inner, wallwidth, height-turret_inner, wall)
+        self.draw_square(1, turret_inner, wallwidth, height-turret_inner, wall)
         # Front right turret
         self.level.translate(width+1, 0)
         self.tower(-turret_inner-1, -turret_project, turretsize)
         # Right wall
-        self.level.draw_square(-1, turret_inner, -wallwidth, height-turret_inner, wall)
+        self.draw_square(-1, turret_inner, -wallwidth, height-turret_inner, wall)
 
         # Back right turret
         self.level.translate(0, height)
@@ -365,7 +365,7 @@ class CastleGenerator(Generator):
         self.tower(-turret_project+1, -turret_inner, turretsize)
 
         # Back wall
-        self.level.draw_square(1+turret_inner, 0, width-turret_inner, -wallwidth+1, wall)
+        self.draw_square(1+turret_inner, 0, width-turret_inner, -wallwidth+1, wall)
 
         self.level.translate((width+1)/2, -height)
 
@@ -374,58 +374,58 @@ class CastleGenerator(Generator):
         self.gatehouse(gatehouse_project, gh_width, gatesize)
 
     def tower(self, x, y, size):
-        self.level.draw_square(x, y, x+size, y+size, wall)
-        self.level.draw_square(x+1, y+1, x+size-1, y+size-1, floor)
+        self.draw_square(x, y, x+size, y+size, wall)
+        self.draw_square(x+1, y+1, x+size-1, y+size-1, floor)
 
     def gatehouse(self, projection, width, gatesize):
         #inner = (width-self.gatesize)/2+1 - 2*self.wallwidth
 
         # Front walls
-        self.level.draw_square(gatesize/2+1, -projection,
+        self.draw_square(gatesize/2+1, -projection,
                                width/2, -projection+self.wallwidth-1, wall)
-        self.level.draw_square(-gatesize/2, -projection,
+        self.draw_square(-gatesize/2, -projection,
                                -width/2+1, -projection+self.wallwidth-1, wall)
         # Outer walls
-        self.level.draw_square(width/2-self.wallwidth+1, -projection,
+        self.draw_square(width/2-self.wallwidth+1, -projection,
                                width/2, 0, wall)
-        self.level.draw_square(-width/2+1+self.wallwidth-1, -projection,
+        self.draw_square(-width/2+1+self.wallwidth-1, -projection,
                                -width/2+1, 0, wall)
 
         # Inner walls
-        self.level.draw_square(gatesize/2+1, -projection,
+        self.draw_square(gatesize/2+1, -projection,
                                gatesize/2+self.wallwidth, 0, wall)
-        self.level.draw_square(-gatesize/2, -projection,
+        self.draw_square(-gatesize/2, -projection,
                                -gatesize/2-self.wallwidth+1, 0, wall)
         gateheight = max(0, self.wallwidth-projection+1)
-        self.level.draw_line(gatesize/2+1, gateheight-1,
+        self.draw_line(gatesize/2+1, gateheight-1,
                              gatesize/2+self.wallwidth, gateheight-1, floor)
-        self.level.draw_line(-gatesize/2, gateheight-1,
+        self.draw_line(-gatesize/2, gateheight-1,
                              -gatesize/2-self.wallwidth+1, gateheight-1, floor)
         self.level.set_terrain((-gatesize/2, gateheight-1), window)
         self.level.set_terrain((gatesize/2+1, gateheight-1), window)
-        for p in self.level.get_line(-gatesize/2+1, gateheight, gatesize/2, gateheight):
+        for p in self.get_line(-gatesize/2+1, gateheight, gatesize/2, gateheight):
             door = Door(p, level=self.level)
         self.level.set_terrain((width/2-self.wallwidth+1, gateheight-1), wall)
         self.level.set_terrain((-width/2+self.wallwidth, gateheight-1), wall)
 
         # Part inside main castle
         height = 10
-        self.level.draw_square(-width/2+self.wallwidth, gateheight,
+        self.draw_square(-width/2+self.wallwidth, gateheight,
                                -gatesize/2, height-projection, wall)
-        self.level.draw_square(-width/2+self.wallwidth+1, gateheight-1,
+        self.draw_square(-width/2+self.wallwidth+1, gateheight-1,
                                -gatesize/2-1, height-projection-1, floor)
-        self.level.draw_square(width/2-self.wallwidth+1, gateheight,
+        self.draw_square(width/2-self.wallwidth+1, gateheight,
                                gatesize/2+1, height-projection, wall)
-        self.level.draw_square(width/2-self.wallwidth, gateheight-1,
+        self.draw_square(width/2-self.wallwidth, gateheight-1,
                                gatesize/2+2, height-projection-1, floor)
 
     def get_path(self, x1, y1, x2, y2, w1, w2):
         path = []
         for offset in range(-w1/2+1, 1+w1/2):
-            path += self.level.get_line(x1+offset, y1, x1+offset, (y1+y2)/2)
-            path += self.level.get_line(x1, (y1+y2)/2+offset, (x1+x2)/2, (y1+y2)/2+offset)
+            path += self.get_line(x1+offset, y1, x1+offset, (y1+y2)/2)
+            path += self.get_line(x1, (y1+y2)/2+offset, (x1+x2)/2, (y1+y2)/2+offset)
         for offset in range(-w2/2+1, 1+w2/2):
-            path += self.level.get_line((x1+x2)/2, (y1+y2)/2+offset, x2, (y1+y2)/2+offset)
-            path += self.level.get_line(x2+offset, (y1+y2)/2, x2+offset, y2)
+            path += self.get_line((x1+x2)/2, (y1+y2)/2+offset, x2, (y1+y2)/2+offset)
+            path += self.get_line(x2+offset, (y1+y2)/2, x2+offset, y2)
 
         return set(path)

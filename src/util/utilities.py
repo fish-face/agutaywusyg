@@ -3,13 +3,6 @@ import math
 from pygame import Rect
 
 
-def points_in(rect):
-    if isinstance(rect, Rect):
-        return [(x, y) for y in xrange(rect.top, rect.bottom+1) for x in xrange(rect.left, rect.right+1)]
-    else:
-        return rect
-
-
 def dist_2(a, b):
     return (b[0]-a[0])**2 + (b[1]-a[1])**2
 

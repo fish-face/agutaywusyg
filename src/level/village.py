@@ -110,7 +110,7 @@ class VillageGenerator(Generator):
         return n
 
     def make_road(self, x1, y1, x2, y2):
-        path = self.level.get_line(x1, y1, x2, y2)
+        path = self.get_line(x1, y1, x2, y2)
 
         #Don't go out of bounds
         if x2 < 0 or x2 > self.size - 1 or y2 < 0 or y2 > self.size - 1:
@@ -131,9 +131,9 @@ class VillageGenerator(Generator):
         #These sets are how we know whether we're going parallel to another road
 
         if horizontal:
-            self.roads_h |= set(self.level.get_square(x1, y1+self.house_size, x2, y1-self.house_size))
+            self.roads_h |= set(self.get_square(x1, y1+self.house_size, x2, y1-self.house_size))
         else:
-            self.roads_v |= set(self.level.get_square(x1+self.house_size, y1, x1-self.house_size, y2))
+            self.roads_v |= set(self.get_square(x1+self.house_size, y1, x1-self.house_size, y2))
 
         self.roads += path
 
@@ -158,7 +158,7 @@ class VillageGenerator(Generator):
         door_x, door_y = self.level.coords_in_dir(x1, y1, (direction-1)%4, width/2)
 
         # Check we're not overlapping something
-        points = self.level.get_square(x1, y1, x2, y2)
+        points = self.get_square(x1, y1, x2, y2)
         if set(points) & self.occupied:
             return False
 
@@ -168,15 +168,15 @@ class VillageGenerator(Generator):
             y1, y2 = y2, y1
 
         # Place the terrain
-        self.level.draw_square(x1, y1, x2, y2, floor)
-        self.level.draw_line(x1, y1, x2, y1, wall)
-        self.level.draw_line(x2, y1, x2, y2, wall)
-        self.level.draw_line(x2, y2, x1, y2, wall)
-        self.level.draw_line(x1, y2, x1, y1, wall)
+        self.draw_square(x1, y1, x2, y2, floor)
+        self.draw_line(x1, y1, x2, y1, wall)
+        self.draw_line(x2, y1, x2, y2, wall)
+        self.draw_line(x2, y2, x1, y2, wall)
+        self.draw_line(x1, y2, x1, y1, wall)
         # Region name will get reset later
         region = Region('unoccupied house',
                         self.level,
-                        self.level.get_square(x1+1, y1+1, x2-1, y2-1))
+                        self.get_square(x1+1, y1+1, x2-1, y2-1))
         door = Door((door_x, door_y), level=self.level, blocks=region)
         path = self.level.coords_in_dir(door_x, door_y, direction, -1)
         region.door = door
@@ -186,7 +186,7 @@ class VillageGenerator(Generator):
         self.level.set_terrain((door_x, door_y), floor)
         self.level.set_terrain(path, road)
 
-        self.occupied |= set(self.level.get_square(x1, y1, x2, y2))
+        self.occupied |= set(self.get_square(x1, y1, x2, y2))
 
         return True
 
