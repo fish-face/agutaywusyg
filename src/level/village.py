@@ -168,7 +168,7 @@ class VillageGenerator(Generator):
             y1, y2 = y2, y1
 
         # Place the terrain
-        self.draw_square(x1, y1, x2, y2, floor)
+        self.fill_square(x1, y1, x2, y2, floor)
         self.draw_line(x1, y1, x2, y1, wall)
         self.draw_line(x2, y1, x2, y2, wall)
         self.draw_line(x2, y2, x1, y2, wall)

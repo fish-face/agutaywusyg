@@ -34,6 +34,10 @@ class Generator:
         else:
             return space
 
+    @staticmethod
+    def points_in_multiple(spaces):
+        return [p for space in spaces for p in Generator.points_in(space)]
+
     def draw_line(self, x1, y1, x2, y2, terrain):
         self.draw_points(self.get_line(x1, y1, x2, y2), terrain)
 
@@ -73,7 +77,64 @@ class Generator:
             points.reverse()
         return points
 
-    def draw_square(self, x1, y1, x2, y2, terrain):
+    def draw_rects_outlines(self, rects, terrain):
+        pass
+
+    @staticmethod
+    def get_outlines(shapes, eight=True):
+        """Get the outline of the union of several shapes"""
+        union = set([p for shape in shapes for p in Generator.points_in(shape)])
+        if eight:
+            return [p for shape in shapes for p in Generator.get_outline(shape)
+                    if ((p[0]+1, p[1]) not in union or
+                        (p[0]-1, p[1]) not in union or
+                        (p[0], p[1]+1) not in union or
+                        (p[0], p[1]-1) not in union or
+                        (p[0]+1, p[1]+1) not in union or
+                        (p[0]-1, p[1]-1) not in union or
+                        (p[0]+1, p[1]-1) not in union or
+                        (p[0]-1, p[1]+1) not in union)]
+        else:
+            return [p for shape in shapes for p in Generator.get_outline(shape)
+                    if ((p[0]+1, p[1]) not in union or
+                        (p[0]-1, p[1]) not in union or
+                        (p[0], p[1]+1) not in union or
+                        (p[0], p[1]-1) not in union)]
+
+    @staticmethod
+    def get_outline(shape):
+        """Get the outline of a shape"""
+        outline = []
+        if isinstance(shape, Rect):
+            outline += [(shape.left, y) for y in xrange(shape.top, shape.bottom)]
+            outline += [(x, shape.bottom) for x in xrange(shape.left, shape.right)]
+            outline += [(shape.right, y) for y in xrange(shape.bottom, shape.top, -1)]
+            outline += [(x, shape.top) for x in xrange(shape.right, shape.left, -1)]
+        else:
+            try:
+                if len(shape) == 4:
+                    outline += [(shape[0], y) for y in xrange(shape[1], shape[3])]
+                    outline += [(x, shape[3]) for x in xrange(shape[0], shape[2])]
+                    outline += [(shape[2], y) for y in xrange(shape[3], shape[1], -1)]
+                    outline += [(x, shape[1]) for x in xrange(shape[2], shape[0], -1)]
+            except TypeError:
+                raise TypeError('Don\'t know how to make an outline for the given shape.')
+
+        return outline
+        #else:
+        #    for p in points:
+        #        if ((p[0]+1, p[1]) not in points or
+        #            (p[0]-1, p[1]) not in points or
+        #            (p[0], p[1]+1) not in points or
+        #            (p[0], p[1]-1) not in points or
+        #            eight and ((p[0]+1, p[1]+1) not in points or
+        #                       (p[0]-1, p[1]-1) not in points or
+        #                       (p[0]+1, p[1]-1) not in points or
+        #                       (p[0]-1, p[1]+1) not in points)):
+        #            outline.append(p)
+        #return outline
+
+    def fill_square(self, x1, y1, x2, y2, terrain):
         """Draw a filled rectangle with the given coordinates, inclusive"""
         self.draw_points(self.get_square(x1, y1, x2, y2), terrain)
 
@@ -92,27 +153,3 @@ class Generator:
             for p in set(points):
                 points |= set(((p[0]+1, p[1]), (p[0]-1, p[1]), (p[0], p[1]-1), (p[0], p[1]+1)))
 
-    @staticmethod
-    def outline(points, eight=True):
-        outline = set()
-        if isinstance(points, Rect):
-            outline |= set(Generator.get_line(points.left, points.top,
-                                              points.left, points.bottom))
-            outline |= set(Generator.get_line(points.left, points.bottom,
-                                              points.right, points.bottom))
-            outline |= set(Generator.get_line(points.right, points.bottom,
-                                              points.right, points.top))
-            outline |= set(Generator.get_line(points.right, points.top,
-                                              points.left, points.top))
-        else:
-            for p in points:
-                if ((p[0]+1, p[1]) not in points or
-                    (p[0]-1, p[1]) not in points or
-                    (p[0], p[1]+1) not in points or
-                    (p[0], p[1]-1) not in points or
-                    eight and ((p[0]+1, p[1]+1) not in points or
-                               (p[0]-1, p[1]-1) not in points or
-                               (p[0]+1, p[1]-1) not in points or
-                               (p[0]-1, p[1]+1) not in points)):
-                    outline.add(p)
-        return outline
