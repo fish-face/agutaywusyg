@@ -1,10 +1,13 @@
 # encoding=utf-8
 
+from pygame import Rect
+
 from level import TerrainInfo, Region, floor, wall
 from objects import Door, Key, GameObject
 from actor import Rodney, Villager
 from generator import Generator
 from util import names
+from constants import UP, DOWN, LEFT, RIGHT
 
 import random
 
@@ -86,7 +89,7 @@ class VillageGenerator(Generator):
             #if we go out-of-bounds. To maximise chances of success we shorten
             #the attempted road each time we fail.
             while tries < 8:
-                x2, y2 = self.level.coords_in_dir(x1, y1, d, l)
+                x2, y2 = self.coords_in_dir(x1, y1, d, l)
                 if not self.make_road(x1, y1, x2, y2):
                     tries += 1
                     if l > self.road_length:
@@ -100,9 +103,9 @@ class VillageGenerator(Generator):
             #Maybe branch. Move away from the tip of this road to avoid the
             #branches being too close and parallel.
             if random.random() < self.branchiness:
-                x2, y2 = self.level.coords_in_dir(x2, y2, (d+1)%4, 1)
+                x2, y2 = self.coords_in_dir(x2, y2, (d+1)%4, 1)
                 self.make_roads(x2, y2, n/2)
-                x2, y2 = self.level.coords_in_dir(x2, y2, (d-1)%4, 2)
+                x2, y2 = self.coords_in_dir(x2, y2, (d-1)%4, 2)
                 self.make_roads(x2, y2, n/2)
             else:
                 self.make_roads(x2, y2, n-1)
@@ -131,62 +134,48 @@ class VillageGenerator(Generator):
         #These sets are how we know whether we're going parallel to another road
 
         if horizontal:
-            self.roads_h |= set(self.get_square(x1, y1+self.house_size, x2, y1-self.house_size))
+            self.roads_h |= set(self.get_rect(x1, y1-self.house_size, x2-x1, 2*self.house_size+1))
         else:
-            self.roads_v |= set(self.get_square(x1+self.house_size, y1, x1-self.house_size, y2))
+            self.roads_v |= set(self.get_rect(x1-self.house_size, y1, 2*self.house_size+1, y2-y1))
 
         self.roads += path
 
         return True
 
-    def make_house(self, x1, y1, direction, width, depth):
+    def make_house(self, x, y, direction, width, depth):
         if random.random() > self.house_chance:
             return False
 
         # Get corners of house
+        rect = Rect(x+2, y - width/2, depth, width)
+        self.rotate_rect(rect, (x, y), -direction)
+        door_pos = self.rotate((x+2, y), (x, y), -direction)
+        path_pos = self.rotate((x+1, y), (x, y), -direction)
 
-        x1, y1 = self.level.coords_in_dir(x1, y1, direction, 2)
-        x1, y1 = self.level.coords_in_dir(x1, y1, (direction+1)%4, width/2)
-        x2, y2 = self.level.coords_in_dir(x1, y1, direction, depth)
-        x2, y2 = self.level.coords_in_dir(x2, y2, (direction-1)%4, width)
-
-        # Make sure not out of bounds
-        if x2 < 0 or x2 >= self.size or y2 < 0 or y2 >= self.size:
+        # Make sure not out of bounds or overlapping something
+        if rect.left < 0 or rect.right >= self.size or rect.top < 0 or rect.bottom >= self.size:
             return False
-
-        # Place the door
-        door_x, door_y = self.level.coords_in_dir(x1, y1, (direction-1)%4, width/2)
-
-        # Check we're not overlapping something
-        points = self.get_square(x1, y1, x2, y2)
+        points = self.get_rect(rect)
         if set(points) & self.occupied:
             return False
 
-        if x2 < x1:
-            x1, x2 = x2, x1
-        if y2 < y1:
-            y1, y2 = y2, y1
-
         # Place the terrain
-        self.fill_square(x1, y1, x2, y2, floor)
-        self.draw_line(x1, y1, x2, y1, wall)
-        self.draw_line(x2, y1, x2, y2, wall)
-        self.draw_line(x2, y2, x1, y2, wall)
-        self.draw_line(x1, y2, x1, y1, wall)
+        self.fill_rect(rect, road)
+        self.outline(rect, wall)
+
         # Region name will get reset later
         region = Region('unoccupied house',
                         self.level,
-                        self.get_square(x1+1, y1+1, x2-1, y2-1))
-        door = Door((door_x, door_y), level=self.level, blocks=region)
-        path = self.level.coords_in_dir(door_x, door_y, direction, -1)
+                        self.get_rect(rect.inflate(-2,-2)))
+        door = Door(door_pos, level=self.level, blocks=region)
         region.door = door
-        region.path = path
+        region.path = path_pos
 
         self.houses.append(region)
-        self.level.set_terrain((door_x, door_y), floor)
-        self.level.set_terrain(path, road)
+        self.level.set_terrain(door_pos, floor)
+        self.level.set_terrain(path_pos, road)
 
-        self.occupied |= set(self.get_square(x1, y1, x2, y2))
+        self.occupied |= set(self.get_rect(rect))
 
         return True
 

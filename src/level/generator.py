@@ -1,7 +1,6 @@
 from pygame import Rect
 
-from constants import UP, DOWN, LEFT, RIGHT
-
+from constants import LEFT, RIGHT, UP, DOWN
 
 class Generator:
     def __init__(self):
@@ -21,6 +20,24 @@ class Generator:
             return (x - l, y)
         elif d == DOWN:
             return (x, y + l)
+
+    @staticmethod
+    def rotate(p, c, amount, clockwise=True):
+        """Rotate x,y around cx,cy by amount (1 = 90 degrees)"""
+        if not clockwise:
+            amount*=-1
+        offsetx = (0, 1, 0, 1)[amount]
+        offsety = (1, 0, 1, 0)[amount]
+        signx = (-1, 1, 1, -1)[amount]
+        signy = (-1, 1, 1, -1)[(amount+1) % 4]
+        return (c[0] + (c[offsetx] - p[offsetx])*signx,
+                c[1] + (c[offsety] - p[offsety])*-signy)
+
+    @staticmethod
+    def rotate_rect(rect, c, amount, clockwise=True):
+        rect.left, rect.top = Generator.rotate((rect.left, rect.top), c, amount, clockwise)
+        rect.w, rect.h = Generator.rotate((rect.w, rect.h), (0,0), amount, clockwise)
+        rect.normalize()
 
     def draw_points(self, points, terrain):
         for p in points:
@@ -77,8 +94,8 @@ class Generator:
             points.reverse()
         return points
 
-    def draw_rects_outlines(self, rects, terrain):
-        pass
+    def outline(self, shape, terrain):
+        self.draw_points(self.get_outline(shape), terrain)
 
     @staticmethod
     def get_outlines(shapes, eight=True):
@@ -134,22 +151,25 @@ class Generator:
         #            outline.append(p)
         #return outline
 
-    def fill_square(self, x1, y1, x2, y2, terrain):
-        """Draw a filled rectangle with the given coordinates, inclusive"""
-        self.draw_points(self.get_square(x1, y1, x2, y2), terrain)
+    def fill_rect(self, *args):
+        """Draw a filled rectangle with the given coordinates and dimensions"""
+        try:
+            rect = args[:-1]
+            terrain = args[-1]
+        except IndexError:
+            raise TypeError('fill_rect expects a rect-style and terrain')
+        self.draw_points(self.get_rect(*rect), terrain)
 
     @staticmethod
-    def get_square(x1, y1, x2, y2):
+    def get_rect(*args):
         """Get all points in the described rectangle, inclusive"""
-        if y1 > y2:
-            y1, y2 = y2, y1
-        if x1 > x2:
-            x1, x2 = x2, x1
-        return [(x,y) for x in xrange(x1,x2+1) for y in xrange(y1,y2+1)]
+        rect = Rect(args)
+        rect.normalize()
+        return [(x, y) for x in xrange(rect.x, rect.x+rect.w)
+                       for y in xrange(rect.y, rect.y+rect.h)]
 
     @staticmethod
     def expand(points, amount=1):
         for i in xrange(amount):
             for p in set(points):
                 points |= set(((p[0]+1, p[1]), (p[0]-1, p[1]), (p[0], p[1]-1), (p[0], p[1]+1)))
-

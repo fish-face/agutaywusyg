@@ -277,8 +277,12 @@ class Region:
 
     def update(self):
         """Recalculate derivable properties of the region"""
-        x = sum((p[0] for p in self.points))/len(self.points)
-        y = sum((p[1] for p in self.points))/len(self.points)
+        if self.points:
+            x = sum((p[0] for p in self.points))/len(self.points)
+            y = sum((p[1] for p in self.points))/len(self.points)
+        else:
+            x = None
+            y = None
         self.centre = (x, y)
         self.area = len(self.points)
     def __str__(self):
