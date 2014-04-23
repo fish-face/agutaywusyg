@@ -62,7 +62,7 @@ def compass_to(a, b, precision=2):
     angle_to = math.atan2(b[1] - a[1], b[0] - a[0])
 
     def distance(item):
-        return abs(angle_diff(angle_to, item[1]))
+        return abs(angle_diff(angle_to, item[1])) if len(item[0]) <= precision else math.pi
 
     return min(compass_angles.items(), key=distance)[0]
 
