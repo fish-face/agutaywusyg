@@ -61,14 +61,10 @@ def angle_diff(a, b):
 def compass_to(a, b, precision=2):
     angle_to = math.atan2(b[1] - a[1], b[0] - a[0])
 
-    nearest = (None, math.pi)
-    for letters, compass_angle in compass_angles.items():
-        distance = abs(angle_diff(angle_to, compass_angle))
+    def distance(item):
+        return abs(angle_diff(angle_to, item[1]))
 
-        if len(letters) <= precision and distance < nearest[1]:
-            nearest = (letters, distance)
-
-    return nearest[0]
+    return min(compass_angles.items(), key=distance)[0]
 
 def canonicalise(string):
     return text_compare_re.sub('', unicode(string).lower())
