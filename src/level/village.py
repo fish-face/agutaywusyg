@@ -17,7 +17,7 @@ tree = TerrainInfo('T', 'tree', (0,1), False, False)
 
 class VillageGenerator(Generator):
     def __init__(self, level, size=80, house_size=9, house_chance=0.5, branchiness=0.8, **params):
-        self.level = level
+        Generator.__init__(self, level)
         self.size = size
         self.road_width = 1
         self.house_size = house_size

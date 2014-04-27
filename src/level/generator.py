@@ -3,11 +3,23 @@ from pygame import Rect
 from constants import LEFT, RIGHT, UP, DOWN
 
 class Generator:
-    def __init__(self):
-        pass
+    def __init__(self, level):
+        self.level = level
+        self.x = 0
+        self.y = 0
 
     def generate(self, level, centre, **kwargs):
         pass
+
+    def translate(self, x, y):
+        self.x += x
+        self.y += y
+
+    def transform(self, p):
+        return (p[0]+self.x, p[1]+self.y)
+
+    def transform_points(self, points):
+        return [(p[0]+self.x, p[1]+self.y) for p in points]
 
     @staticmethod
     def coords_in_dir(x, y, d, l):
@@ -39,21 +51,12 @@ class Generator:
         rect.w, rect.h = Generator.rotate((rect.w, rect.h), (0,0), amount, clockwise)
         rect.normalize()
 
+    def draw(self, p, terrain):
+        self.level.set_terrain(self.transform(p), terrain)
+
     def draw_points(self, points, terrain):
-        for p in points:
+        for p in self.transform_points(points):
             self.level.set_terrain(p, terrain)
-
-    @staticmethod
-    def points_in(space):
-        if isinstance(space, Rect):
-            return [(x, y) for y in xrange(space.top, space.bottom+1)
-                           for x in xrange(space.left, space.right+1)]
-        else:
-            return space
-
-    @staticmethod
-    def points_in_multiple(spaces):
-        return [p for space in spaces for p in Generator.points_in(space)]
 
     def draw_line(self, x1, y1, x2, y2, terrain):
         self.draw_points(self.get_line(x1, y1, x2, y2), terrain)
@@ -100,7 +103,8 @@ class Generator:
     @staticmethod
     def get_outlines(shapes, eight=True):
         """Get the outline of the union of several shapes"""
-        union = set([p for shape in shapes for p in Generator.points_in(shape)])
+        # TODO: support any kind of shape
+        union = set([p for shape in shapes for p in Generator.get_rect(shape)])
         if eight:
             return [p for shape in shapes for p in Generator.get_outline(shape)
                     if ((p[0]+1, p[1]) not in union or
@@ -119,14 +123,20 @@ class Generator:
                         (p[0], p[1]-1) not in union)]
 
     @staticmethod
-    def get_outline(shape):
+    def get_outline(shape, eight=True):
         """Get the outline of a shape"""
         outline = []
         if isinstance(shape, Rect):
-            outline += [(shape.left, y) for y in xrange(shape.top, shape.bottom)]
-            outline += [(x, shape.bottom) for x in xrange(shape.left, shape.right)]
-            outline += [(shape.right, y) for y in xrange(shape.bottom, shape.top, -1)]
-            outline += [(x, shape.top) for x in xrange(shape.right, shape.left, -1)]
+            if eight:
+                outline += [(shape.left, y) for y in xrange(shape.top, shape.bottom)]
+                outline += [(x, shape.bottom-1) for x in xrange(shape.left, shape.right)]
+                outline += [(shape.right-1, y) for y in xrange(shape.bottom-1, shape.top, -1)]
+                outline += [(x, shape.top) for x in xrange(shape.right-1, shape.left, -1)]
+            else:
+                outline += [(shape.left, y) for y in xrange(shape.top+1, shape.bottom-1)]
+                outline += [(x, shape.bottom-1) for x in xrange(shape.left+1, shape.right-1)]
+                outline += [(shape.right-1, y) for y in xrange(shape.top+1, shape.bottom-1)]
+                outline += [(x, shape.top) for x in xrange(shape.left+1, shape.right-1)]
         else:
             try:
                 if len(shape) == 4:
