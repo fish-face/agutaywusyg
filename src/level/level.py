@@ -38,7 +38,7 @@ class Level:
             [0,  1,  1,  0,  0, -1, -1,  0],
             [1,  0,  0,  1, -1,  0,  0, -1]]
 
-    def __init__(self, world):
+    def __init__(self, world, width, height):
         self.world = world
 
         self.terraintypes = TERRAINS
@@ -47,27 +47,32 @@ class Level:
         self.regions = []
 
         self.set_cursor(0,0)
-        self.setup()
-        self.done_setup()
-
-    def setup(self, width=None, height=None, terrain=floor):
-        """Clear objects and initialize map. Override with level generation."""
-        if not width or not height:
-            raise TypeError('Level.setup() should be called with level dimensions')
-
-        for obj in self.objects.copy():
-            obj.destroy()
-
-        self.regions = []
-
         self.map = []
         for y in xrange(height):
             self.map.append([])
             for x in xrange(width):
-                self.map[-1].append([terrain])
+                self.map[-1].append([])
 
         self.width = width
         self.height = height
+
+        #self.setup()
+        #self.done_setup()
+
+    def setup(self):
+        """Clear objects and initialize map. Override with level generation."""
+        self.set_cursor(0, 0)
+
+        for obj in self.objects.copy():
+            obj.destroy()
+
+        for y in xrange(self.height):
+            for x in xrange(self.width):
+                self.map[x][y] = [floor]
+
+        self[self.world.player.location].append(self.world.player)
+
+        self.regions = []
 
     def done_setup(self):
         """Things to do after level generation"""
@@ -301,7 +306,7 @@ grass = TerrainInfo('v', 'road', (0,1), False, False)
 
 class TestLevel(Level):
     def setup(self):
-        Level.setup(self, 200, 200)
+        Level.setup(self)
 
         self.set_cursor(100,100)
         #VillageGenerator(self).generate()

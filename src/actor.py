@@ -25,11 +25,14 @@ class Actor(GameObject):
 
     @level.setter
     def level(self, value):
-        if value and value not in self.map_memory:
-            self.map_memory[value] = [None] * value.height
-            for y in xrange(value.height):
-                self.map_memory[value][y] = [None] * value.width
+        self.init_map_memory(value)
         GameObject.level.fset(self, value)
+
+    def init_map_memory(self, level):
+        if level and level not in self.map_memory:
+            self.map_memory[level] = [None] * level.height
+            for y in xrange(level.height):
+                self.map_memory[level][y] = [None] * level.width
 
     def ask(self, other, topic):
         """Ask another Actor about topic"""
@@ -149,6 +152,9 @@ class Player(Actor):
         if self.location:
             self.update_fov()
 
+    def destroy(self):
+        # Override default behaviour; the player should never actually be destroyed
+        pass
 
 class Rodney(Actor):
     def __init__(self, *args, **kwargs):

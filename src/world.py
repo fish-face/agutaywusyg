@@ -12,9 +12,10 @@ from quest import MainQuest
 from constants import *
 
 class World:
-    def __init__(self):
+    def __init__(self, screen):
         #self.objects = []
         #self.objects_map = defaultdict(list)
+        self.screen = screen
         self.objectives = []
         self.messages = []
         self.state = STATE_NORMAL
@@ -28,10 +29,9 @@ class World:
 
         self.font = pygame.font.SysFont('Sans', 18)
 
-        self.player = Player(name='you', level=None, description='The Player')
-        self.level = TestLevel(self)
-        self.player.level = self.level
-        self.player.location = (self.level.width/2, self.level.height/2)
+        self.level = TestLevel(self, 200, 200)
+        self.player = Player(location=(self.level.width/2, self.level.height/2), name='you', level=self.level, description='The Player')
+        self.level.setup()
         mq = MainQuest(self)
 
     #def add_object(self, obj):
@@ -76,18 +76,21 @@ class World:
         self.describe("You win!")
         self.quitting = True
 
-    def main_loop(self, screen):
+    def start(self):
         self.update()
         while not self.quitting:
-            delay = self.clock.tick(15)
-            self.framerates.insert(0, 1000.0/delay)
-            self.framerates = self.framerates[:50]
-            framerate = sum(self.framerates)/50.0
-            self.process_events()
-            self.renderer.render(self, screen)
-            screen.blit(self.font.render('%d fps' % framerate, True, (255,255,255)),
-                        (1, 1))
-            pygame.display.flip()
+            self.main_loop()
+
+    def main_loop(self):
+        delay = self.clock.tick(15)
+        self.framerates.insert(0, 1000.0/delay)
+        self.framerates = self.framerates[:50]
+        framerate = sum(self.framerates)/50.0
+        self.process_events()
+        self.renderer.render(self, self.screen)
+        self.screen.blit(self.font.render('%d fps' % framerate, True, (255,255,255)),
+                    (1, 1))
+        pygame.display.flip()
 
     def process_events(self):
         took_turn = False
@@ -144,13 +147,10 @@ class World:
                         took_turn = True
 
             elif e.key == pygame.K_r:
-                loc = self.player.location
                 self.player.map_memory = {}
                 self.level.setup()
-                self.level.add_object(self.player)
-                self.player.level = self.level
-                self.player.location = loc
-                #self.player.update_fov()
+                self.player.init_map_memory(self.level)
+                self.player.update_fov()
                 self.renderer.render_level(self)
                 self.messages = []
 
