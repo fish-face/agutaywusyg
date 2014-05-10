@@ -70,6 +70,3 @@ def canonicalise(string):
 def match_topic(a, b):
     return canonicalise(a) == canonicalise(b)
 
-if __name__ == "__main__":
-    point = [int(coord) for coord in raw_input("x,y,prec: ").split(",")]
-    print compass_to((0, 0), point[:2], point[2])
