@@ -15,8 +15,10 @@ class Generator:
         self.x += x
         self.y += y
 
-    def transform(self, p):
-        return (p[0]+self.x, p[1]+self.y)
+    def transform(self, thing):
+        if isinstance(thing, Rect):
+            return thing.move(self.x, self.y)
+        return (thing[0]+self.x, thing[1]+self.y)
 
     def transform_points(self, points):
         return [(p[0]+self.x, p[1]+self.y) for p in points]

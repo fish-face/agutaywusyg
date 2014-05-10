@@ -22,11 +22,15 @@ KEEP_EXTERNAL = 2
 KEEP_STYLES = (0,1)
 
 class BuildingGraph(object):
-    def __init__(self, entrance, exit, space, num_rooms, paths=1):
-        points = []
+    def __init__(self, seed_points, seed_rooms, space, num_rooms, paths=1):
+        self.seed_points = seed_points
+        self.seed_rooms = seed_rooms
+        points = seed_points[:]
+        points += [room.center for room in seed_rooms]
+        self.n_seeds = len(points)
         list_space = list(space)
         # Pick points to draw buildings around
-        while len(points) < num_rooms:
+        while len(points) < num_rooms + len(seed_rooms):
             p = random.choice(list_space)
             points.append(p)
             for q in points[:-1]:
@@ -42,16 +46,27 @@ class BuildingGraph(object):
 
         self.points = points
         #self.voronoi_ish(self.get_wrecked(boundary))
-        self.borders = self.make_buildings()
+        self.buildings = self.make_buildings()
 
         self.edges = [(i,i+1) for i in range(len(points)-1)]
 
     def make_buildings(self):
-        rects = [Rect(p[0], p[1], 1, 1) for p in self.points]
-        growing = [[True, True, True, True] for p in self.points]
-        amalgamate_limit = 8
+        rects = [Rect(p[0], p[1], 1, 1) for p in self.seed_points]
+        growing = [[True] * 4 for p in self.seed_points]
+
+        rects += [r for r in self.seed_rooms]
+        growing += [[False] * 4 for r in self.seed_rooms]
+
+        rects += [Rect(p[0], p[1], 1, 1) for p in self.points[self.n_seeds:]]
+        growing += [[True] * 4 for p in self.points[self.n_seeds:]]
+
+        amalgamate_limit = 10
         changed = True
-        adjacency = [[] for p in self.points]
+        adjacency = [[] for p in rects]
+        for i in range(len(self.seed_points), self.n_seeds):
+            for j in range(i+1, self.n_seeds):
+                if set(Generator.get_outline(rects[i])) & set(Generator.get_outline(rects[j])):
+                    adjacency[i].append(j)
 
         # Expand rectangles around the points we picked
         while changed:
@@ -68,17 +83,9 @@ class BuildingGraph(object):
         #    if r.height == 1 or r.width == 1:
         #        r.height = 0
         #        r.width = 0
-        #    if r.height < amalgamate_limit or random.randrange(6) == -1:
-        #        if self.merge_rect(i, r, merges, growing[i], rects, UP):
+        #    if r.height*r.width < amalgamate_limit**2: # or random.randrange(6) == -1:
+        #        if self.merge_rect(i, r, merges, adjacency[i], rects):
         #            continue
-        #        if self.merge_rect(i, r, merges, growing[i], rects, DOWN):
-        #            continue
-        #    if r.width < amalgamate_limit or random.randrange(6) == -1:
-        #        if self.merge_rect(i, r, merges, growing[i], rects, LEFT):
-        #            continue
-        #        if self.merge_rect(i, r, merges, growing[i], rects, RIGHT):
-        #            continue
-        #    #print r if isinstance(r, Rect) else 'list', growing[i]
 
         #merged = [[] for i in range(len(rects))]
         #for i, r in enumerate(rects):
@@ -87,18 +94,18 @@ class BuildingGraph(object):
         #    else:
         #        merged[merges[i]].append(r)
 
-        #rects = [r for i, r in enumerate(rects) if not isinstance(r, Rect) or merges[i] is None]
+        #return merged
 
         return [[r] for r in rects]
 
-    def merge_rect(self, i, rect, merges, growth, rects, direction):
-        if isinstance(growth[direction], list):
-            for j in growth[direction]:
-                if merges[j] is not None:
-                    j = merges[j]
-                merges[i] = j
-                return True
+    def merge_rect(self, i, rect, merges, adjacency, rects):
+        for j in adjacency:
+            if merges[j] is not None:
+                j = merges[j]
+            merges[i] = j
+            return True
         return False
+
     def grow_rect(self, i, rect, growth, adjacency, rects, direction):
         """Tries to grow a rectangle in the specified direction
 
@@ -111,17 +118,29 @@ class BuildingGraph(object):
             if direction == LEFT:
                 left -= 1
                 width += 1
-                collision = Rect(rect.x, rect.y+1, 1, rect.h-2)
+                if height > 1:
+                    collision = Rect(rect.x, rect.y+1, 1, rect.h-2)
+                else:
+                    collision = Rect(rect.x, rect.y, 1, 1)
             elif direction == RIGHT:
                 width += 1
-                collision = Rect(rect.right-1, rect.y+1, 1, rect.h-2)
+                if height > 1:
+                    collision = Rect(rect.right-1, rect.y+1, 1, rect.h-2)
+                else:
+                    collision = Rect(rect.right-1, rect.y, 1, 1)
             elif direction == DOWN:
                 height += 1
-                collision = Rect(rect.x+1, rect.bottom-1, rect.w-2, 1)
+                if width > 1:
+                    collision = Rect(rect.x+1, rect.bottom-1, rect.w-2, 1)
+                else:
+                    collision = Rect(rect.x, rect.bottom-1, 1, 1)
             elif direction == UP:
                 top -= 1
                 height += 1
-                collision = Rect(rect.x+1, rect.y, rect.w-2, 1)
+                if width > 1:
+                    collision = Rect(rect.x+1, rect.y, rect.w-2, 1)
+                else:
+                    collision = Rect(rect.x, rect.y, 1, 1)
             building_collisions = collision.collidelistall(rects)
             try:
                 building_collisions.remove(i)
@@ -138,9 +157,10 @@ class BuildingGraph(object):
             else:
                 growth[direction] = False
                 if building_collisions:
+                    care_about = [j for j in building_collisions if j < len(self.points)]
                     # If we collided with a building, make a note.
-                    adjacency[i] += building_collisions
-                    for j in building_collisions:
+                    adjacency[i] += care_about
+                    for j in care_about:
                         adjacency[j].append(i)
 
         return False
@@ -275,8 +295,8 @@ class CastleGenerator(Generator):
         self.orientation = random.randint(0,3)
         self.turretsize = random.randint(6,10)
         self.gatesize = random.randint(1,4)
-        self.wallwidth = random.randint(2,3)
-        self.turret_project = random.randint(2,4)
+        self.wallwidth = random.randint(3,4)
+        self.turret_project = random.randint(2, min(4, self.turretsize-3))
         self.gatehouse_project = random.randint(0,4)
         if self.gatesize % 2 == 1:
             self.width -= 1
@@ -291,6 +311,7 @@ class CastleGenerator(Generator):
         quad = Rect(-self.width/2+self.wallwidth+1, self.wallwidth,
                         self.width-self.wallwidth*2-1, self.height-self.wallwidth*2)
         self.interior_space = set(self.get_rect(quad.inflate(2, 2)))
+        self.fixed_rooms = []
 
         # Draw outer walls
         self.fourwalls(self.width,
@@ -304,13 +325,15 @@ class CastleGenerator(Generator):
 
         # Keep dimensions
         k_gs = (self.gatesize + 2) % 4 if self.gatesize != 2 else 4
-        k_w = (random.randint(int(self.width*0.3), int(self.width*0.5))/2)*2 + k_gs
-        k_h = random.randint(int(self.height*0.3), int(self.height*0.5))
 
         keep_style = random.choice(KEEP_STYLES)
         if keep_style == KEEP_CENTRE:
+            k_w = (random.randint(int(self.width*0.3), int(self.width*0.5))/2)*2 + k_gs
+            k_h = random.randint(int(self.height*0.3), int(self.height*0.5))
             k_x, k_y = 0, (self.height-k_h)/2
         elif keep_style == KEEP_SIDE:
+            k_w = (random.randint(int(self.width*0.4), int(self.width*0.6))/2)*2 + k_gs
+            k_h = random.randint(int(self.height*0.4), int(self.height*0.6))
             side = random.choice((-1, 1))
             k_x, k_y = (self.width-k_w)/2*side, (self.height-k_h)
 
@@ -350,12 +373,16 @@ class CastleGenerator(Generator):
             self.interior_space -= set(self.get_rect(around_keep))
 
         # Creaee buildings
-        graph = BuildingGraph((0, 10), (0, 50), self.interior_space, 10, 1)
+        entrance_room = (4, 10)
+        exit_room = (0, 50)
+        graph = BuildingGraph([entrance_room, exit_room], self.fixed_rooms, self.interior_space, 20, 1)
 
         # Draw building walls
-        for border in graph.borders:
-            #self.draw_points(self.points_in_multiple(border), grass)
-            self.draw_points(self.get_outlines(border), wall)
+        for building in graph.buildings:
+            if building[0] not in self.fixed_rooms:
+                self.draw_points(self.get_outlines(building), wall)
+                if building[0].width == 1 or building[0].height == 1:
+                    self.draw_points(self.get_rect(building[0]), grass)
 
         for door in graph.doors:
             self.draw(door, floor)
@@ -363,92 +390,95 @@ class CastleGenerator(Generator):
 
     def fourwalls(self, width, height, turretsize, wallwidth, turret_project, gatesize, gatehouse_project, turrets):
         turret_inner = turretsize - turret_project
+        wall_inner = max(turret_inner, wallwidth - 1)
+        half_width = (width-1)/2
+        gh_width = 2+2*wallwidth+gatesize*3
+        #gh_width += 2 if gatesize == 1 else 0
 
-        self.fill_rect(-width/2+1, 1, width-1, height-1, floor)
+        self.fill_rect(-half_width, 1, width, height-1, floor)
         # Front wall
-        self.fill_rect(-width/2+(turret_inner), 0,
-                         width-2*(turret_inner), wallwidth, wall)
+        self.fill_rect(-half_width+(turret_inner), 0,
+                       width-2*(turret_inner-1), 1, wall)
+        self.fill_rect(-half_width+wall_inner, wallwidth-1,
+                       width-2*(wall_inner), 1, wall)
         self.fill_rect(-gatesize/2+1, 0, gatesize, wallwidth, floor)
-        self.interior_space -= set(self.transform_points(self.get_rect(-width/2, 0, width, wallwidth)))
+        self.fixed_rooms.append(self.transform(Rect(-width/2+(wall_inner), 0,
+                                                    width/2-wall_inner-gh_width/2+2, wallwidth)))
+        self.fixed_rooms.append(self.transform(Rect(gh_width/2, 0,
+                                                    width/2-wall_inner-gh_width/2+2, wallwidth)))
+        self.interior_space -= set(self.transform_points(self.get_rect(-half_width, 0, width, wallwidth)))
 
         # Front left turret
-        self.translate(-((width+1)/2), 0)
-        self.tower(-turret_project+1, -turret_project, turretsize)
+        self.translate(-half_width, 0)
+        self.tower(-turret_project, -turret_project, turretsize)
+        #for p in ((1, turret_inner-1), (turret_inner-1, 1)):
+        #    self.draw(p, floor)
+        #    Door(self.transform(p), level=self.level)
         # Left wall
-        self.fill_rect(1, turret_inner, wallwidth, height-2*turret_inner, wall)
-        self.interior_space -= set(self.transform_points(self.get_rect(1, 0, wallwidth, height)))
+        self.fill_rect(0, turret_inner, 1, height-2*turret_inner, wall)
+        self.fill_rect(wallwidth-1, wall_inner, 1, height-2*wall_inner, wall)
+        self.fixed_rooms.append(self.transform(Rect(0, turret_inner, wallwidth, height-2*turret_inner)))
+        self.interior_space -= set(self.transform_points(self.get_rect(0, 0, wallwidth, height)))
         # Front right turret
-        self.translate(width+1, 0)
-        self.tower(-turret_inner-1, -turret_project, turretsize)
+        self.translate(width, 0)
+        self.tower(-turret_inner, -turret_project, turretsize)
+        #for p in ((-2, turret_inner-1), (-turret_inner, 1)):
+        #    self.draw(p, floor)
+        #    Door(self.transform(p), level=self.level)
         # Right wall
-        self.fill_rect(-1-wallwidth, turret_inner, wallwidth, height-2*turret_inner, wall)
-        self.interior_space -= set(self.transform_points(self.get_rect(-1-wallwidth, 0, wallwidth, height)))
+        self.fill_rect(-wallwidth, wall_inner, 1, height-2*wall_inner, wall)
+        self.fill_rect(-1, turret_inner, 1, height-2*turret_inner, wall)
+        self.fixed_rooms.append(self.transform(Rect(-wallwidth, wall_inner, wallwidth, height-2*wall_inner)))
+        self.interior_space -= set(self.transform_points(self.get_rect(-wallwidth, 0, wallwidth, height)))
 
         # Back right turret
         self.translate(0, height)
-        self.tower(-turret_inner-1, -turret_inner, turretsize)
+        self.tower(-turret_inner, -turret_inner, turretsize)
         # Back left turret
-        self.translate(-width-1, 0)
-        self.tower(-turret_project+1, -turret_inner, turretsize)
+        self.translate(-width, 0)
+        self.tower(-turret_project, -turret_inner, turretsize)
 
         # Back wall
-        self.fill_rect(1+turret_inner, -wallwidth, width-2*turret_inner-1, wallwidth, wall)
-        self.interior_space -= set(self.transform_points(self.get_rect(1, -wallwidth, width-1, wallwidth)))
+        self.fill_rect(wall_inner, -wallwidth, width-2*wall_inner, 1, wall)
+        self.fill_rect(turret_inner, -1, width-2*turret_inner, 1, wall)
+        self.interior_space -= set(self.transform_points(self.get_rect(0, -wallwidth, width-1, wallwidth)))
 
-        self.translate((width+1)/2, -height)
+        self.translate(half_width, -height)
 
-        gh_width = 2+2*wallwidth+gatesize*3
-        gh_width += 2 if gatesize == 1 else 0
-        self.gatehouse(gatehouse_project, gh_width, gatesize, 10)
+        self.gatehouse(gatehouse_project, gh_width, gatesize, wallwidth)
 
     def tower(self, x, y, size):
         self.fill_rect(x, y, size, size, wall)
         self.fill_rect(x+1, y+1, size-2, size-2, floor)
         self.interior_space -= set(self.transform_points(self.get_rect(x, y, size, size)))
+        self.fixed_rooms.append(self.transform(Rect(x, y, size, size)))
 
-    def gatehouse(self, projection, width, gatesize, height):
-        inner = (width-gatesize)/2+1 - self.wallwidth
+    def gatehouse(self, projection, width, gatesize, wallwidth):
+        turret_size = (width - gatesize)/2
+        # Check bottom of gatehouse tower won't abut inner wall
+        if turret_size - projection == wallwidth - 1:
+            projection -= 1
+        gateheight = turret_size/2-projection
+        left = -gatesize/2+1
+        right = gatesize/2
 
-        # Front walls
-        self.fill_rect(gatesize/2+1, -projection,
-                       width/2-gatesize/2, self.wallwidth, wall)
-        self.fill_rect(-width/2+1, -projection,
-                       width/2-gatesize/2, self.wallwidth, wall)
-        # Outer walls
-        self.fill_rect(width/2-self.wallwidth+1, -projection,
-                       self.wallwidth, projection, wall)
-        self.fill_rect(-width/2+1, -projection,
-                       self.wallwidth, projection, wall)
+        self.draw_line(left-1, 0, left-1, self.wallwidth-1, wall)
+        self.draw_line(right+1, 0, right+1, self.wallwidth-1, wall)
 
-        # Inner walls
-        self.fill_rect(gatesize/2+1, -projection,
-                       self.wallwidth, projection, wall)
-        self.fill_rect(-gatesize/2-self.wallwidth+1, -projection,
-                       self.wallwidth, projection, wall)
-        gateheight = max(0, self.wallwidth-projection+1)
-        self.draw_line(gatesize/2+1, gateheight-1,
-                       gatesize/2+self.wallwidth, gateheight-1, floor)
-        self.draw_line(-gatesize/2, gateheight-1,
-                       -gatesize/2-self.wallwidth+1, gateheight-1, floor)
-        self.draw((-gatesize/2, gateheight-1), window)
-        self.draw((gatesize/2+1, gateheight-1), window)
-        for p in self.get_line(-gatesize/2+1, gateheight, gatesize/2, gateheight):
+        self.tower(left-turret_size, gateheight-turret_size/2, turret_size)
+        self.tower(right+1, gateheight-turret_size/2, turret_size)
+        self.fill_rect(left, -projection, gatesize, turret_size, path)
+
+        self.draw((left-1, gateheight+1), window)
+        self.draw((right+1, gateheight+1), window)
+        self.draw((left-1, gateheight-1), window)
+        self.draw((right+1, gateheight-1), window)
+        if turret_size - projection < wallwidth - 1:
+            self.draw((left-1, wallwidth-2), window)
+            self.draw((right+1, wallwidth-2), window)
+
+        for p in self.get_line(left, gateheight, right, gateheight):
             Door(self.transform(p), level=self.level)
-            self.draw((width/2-self.wallwidth+1, gateheight-1), wall)
-            self.draw((-width/2+self.wallwidth, gateheight-1), wall)
-
-        # Part inside main castle
-        self.fill_rect(-width/2+self.wallwidth, gateheight,
-                       inner, height-projection-gateheight, wall)
-        self.fill_rect(-width/2+self.wallwidth+1, gateheight-1,
-                       inner-2, height-projection-gateheight, floor)
-        self.fill_rect(gatesize/2+1, gateheight,
-                       inner, height-projection-gateheight, wall)
-        self.fill_rect(gatesize/2+2, gateheight-1,
-                       inner-2, height-projection-gateheight, floor)
-        gatehouse_space = self.get_rect(-width/2+self.wallwidth-2, 0,
-                                        width-(self.wallwidth-3)*2, height-projection+2)
-        self.interior_space -= set(self.transform_points(gatehouse_space))
 
     def get_path(self, x1, y1, x2, y2, w1, w2):
         path = []
