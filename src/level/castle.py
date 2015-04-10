@@ -21,6 +21,12 @@ KEEP_SIDE = 1
 KEEP_EXTERNAL = 2
 KEEP_STYLES = (0,1)
 
+class Way(object):
+    def __init__(self, room, door):
+        self.room = room
+        self.door = door
+
+
 class BuildingGraph(object):
     def __init__(self, seed_points, seed_rooms, space, num_rooms, paths=1):
         self.seed_points = seed_points
@@ -173,9 +179,11 @@ class BuildingGraph(object):
                         set(Generator.get_outline(s, eight=False)))
             if edge:
                 self.doors.append(random.choice(edge))
+                self.path[tuple(r)].append(Way(s, self.doors[-1]))
                 return True
             return False
 
+        self.path = defaultdict(list)
         self.doors = []
         current = 0
         stack = [0]
@@ -289,7 +297,7 @@ class BuildingGraph(object):
 class CastleGenerator(Generator):
     def __init__(self, level):
         Generator.__init__(self, level)
-        self.size = 80
+        self.size = 50
         self.width = random.randint(self.size*0.4, self.size*0.6) * 2
         self.height = random.randint(self.size*0.4, self.size*0.6) * 2
         self.orientation = random.randint(0,3)
@@ -326,11 +334,16 @@ class CastleGenerator(Generator):
         # Keep dimensions
         k_gs = (self.gatesize + 2) % 4 if self.gatesize != 2 else 4
 
-        keep_style = random.choice(KEEP_STYLES)
+        if self.height < 75:
+            keep_style = KEEP_SIDE
+        else:
+            keep_style = random.choice(KEEP_STYLES)
+
         if keep_style == KEEP_CENTRE:
             k_w = (random.randint(int(self.width*0.3), int(self.width*0.5))/2)*2 + k_gs
             k_h = random.randint(int(self.height*0.3), int(self.height*0.5))
             k_x, k_y = 0, (self.height-k_h)/2
+            side = 0
         elif keep_style == KEEP_SIDE:
             k_w = (random.randint(int(self.width*0.4), int(self.width*0.6))/2)*2 + k_gs
             k_h = random.randint(int(self.height*0.4), int(self.height*0.6))
@@ -372,10 +385,30 @@ class CastleGenerator(Generator):
                                width, self.height)
             self.interior_space -= set(self.get_rect(around_keep))
 
+        # Pick alternative entrance
+        if keep_style == KEEP_CENTRE:
+            alt_entrance_side = random.choice((LEFT, DOWN, RIGHT))
+            if alt_entrance_side == LEFT:
+                exit_room = (-k_w/2, self.height/2)
+                exit_room_space = Rect(-k_w/2-9, self.height/2-5, 10, 10)
+            elif alt_entrance_side == RIGHT:
+                exit_room = (k_w/2+1, self.height/2)
+                exit_room_space = Rect(k_w/2, self.height/2-5, 10, 10)
+            elif alt_entrance_side == DOWN:
+                exit_room = (0, self.height/2 + k_h/2+1)
+                exit_room_space = Rect(-5, self.height/2 + k_h/2, 10, 10)
+        elif keep_style == KEEP_SIDE:
+            if side == -1:
+                exit_room = (-self.width/2+k_w+1, self.height - k_h/2)
+                exit_room_space = Rect(-self.width/2+k_w+1, self.height - k_h/2 - 5, 10, 10)
+            else:
+                exit_room = (self.width/2-k_w, self.height - k_h/2)
+                exit_room_space = Rect(self.width/2-k_w-9, self.height - k_h/2 - 5, 10, 10)
+        self.interior_space |= set(self.get_rect(exit_room_space))
+
         # Creaee buildings
-        entrance_room = (4, 10)
-        exit_room = (0, 50)
-        graph = BuildingGraph([entrance_room, exit_room], self.fixed_rooms, self.interior_space, 20, 1)
+        entrance_room = (self.gatesize/2+3, 10)
+        graph = BuildingGraph([entrance_room, exit_room], self.fixed_rooms, self.interior_space, 10, 1)
 
         # Draw building walls
         for building in graph.buildings:
@@ -387,6 +420,11 @@ class CastleGenerator(Generator):
         for door in graph.doors:
             self.draw(door, floor)
             Door(door, level=self.level)
+
+        self.draw((self.gatesize/2+2, 10), floor)
+        Door((self.gatesize/2+2, 10), level=self.level)
+
+        self.lock_doors([x[0] for x in graph.buildings], graph.path)
 
     def fourwalls(self, width, height, turretsize, wallwidth, turret_project, gatesize, gatehouse_project, turrets):
         turret_inner = turretsize - turret_project
@@ -417,7 +455,7 @@ class CastleGenerator(Generator):
         # Left wall
         self.fill_rect(0, turret_inner, 1, height-2*turret_inner, wall)
         self.fill_rect(wallwidth-1, wall_inner, 1, height-2*wall_inner, wall)
-        self.fixed_rooms.append(self.transform(Rect(0, turret_inner, wallwidth, height-2*turret_inner)))
+        self.fixed_rooms.append(self.transform(Rect(0, turret_inner-1, wallwidth, height-2*(turret_inner-1))))
         self.interior_space -= set(self.transform_points(self.get_rect(0, 0, wallwidth, height)))
         # Front right turret
         self.translate(width, 0)
@@ -428,7 +466,7 @@ class CastleGenerator(Generator):
         # Right wall
         self.fill_rect(-wallwidth, wall_inner, 1, height-2*wall_inner, wall)
         self.fill_rect(-1, turret_inner, 1, height-2*turret_inner, wall)
-        self.fixed_rooms.append(self.transform(Rect(-wallwidth, wall_inner, wallwidth, height-2*wall_inner)))
+        self.fixed_rooms.append(self.transform(Rect(-wallwidth, turret_inner-1, wallwidth, height-2*(turret_inner-1))))
         self.interior_space -= set(self.transform_points(self.get_rect(-wallwidth, 0, wallwidth, height)))
 
         # Back right turret
@@ -441,6 +479,8 @@ class CastleGenerator(Generator):
         # Back wall
         self.fill_rect(wall_inner, -wallwidth, width-2*wall_inner, 1, wall)
         self.fill_rect(turret_inner, -1, width-2*turret_inner, 1, wall)
+        self.fixed_rooms.append(self.transform(Rect(turret_inner-1, -wallwidth,
+                                                    width-2*(turret_inner-1), wallwidth)))
         self.interior_space -= set(self.transform_points(self.get_rect(0, -wallwidth, width-1, wallwidth)))
 
         self.translate(half_width, -height)
@@ -490,3 +530,19 @@ class CastleGenerator(Generator):
             path += self.get_line(x2+offset, (y1+y2)/2, x2+offset, y2)
 
         return set(path)
+
+    def lock_doors(self, rooms, path):
+        def remove_below(room):
+            try:
+                unlocked.remove(room)
+            except:
+                pass
+            for r in path[tuple(room)]:
+                remove_below(r.room)
+
+        unlocked = rooms
+        keys_placed = 0
+        while unlocked and keys_placed < 4:
+            lock_target = random.choice(unlocked)
+            remove_below(lock_target)
+            keys_placed += 1
