@@ -299,6 +299,7 @@ class Region:
 
 from village import VillageGenerator
 from castle import CastleGenerator
+from fortress import FortressGenerator
 from actor import Villager
 import random
 
@@ -310,5 +311,6 @@ class TestLevel(Level):
 
         self.set_cursor(100,100)
         #VillageGenerator(self).generate()
-        CastleGenerator(self).generate()
+        #CastleGenerator(self).generate()
+        FortressGenerator(self).generate()
         self.set_cursor(0,0)

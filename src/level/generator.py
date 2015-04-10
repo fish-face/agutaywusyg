@@ -1,6 +1,6 @@
 from pygame import Rect
 
-from constants import LEFT, RIGHT, UP, DOWN
+from constants import LEFT, RIGHT, UP, DOWN, HORIZONTAL, VERTICAL
 
 class Generator:
     def __init__(self, level):
@@ -22,6 +22,24 @@ class Generator:
 
     def transform_points(self, points):
         return [(p[0]+self.x, p[1]+self.y) for p in points]
+
+    @staticmethod
+    def reflect_rect(thing, axis, centre):
+        if isinstance(thing, Rect):
+            rect = thing.copy()
+            if axis == HORIZONTAL:
+                rect.x = centre*2 - rect.right
+            else:
+                rect.y = centre*2 - rect.bottom
+            return rect
+        raise NotImplemented
+
+    @staticmethod
+    def reflect(p, axis, centre):
+        if axis == HORIZONTAL:
+            return (centre*2 - p[0] - 1, p[1])
+        else:
+            return (p[0], centre*2 - p[1] - 1)
 
     @staticmethod
     def coords_in_dir(x, y, d, l):
@@ -175,6 +193,8 @@ class Generator:
     @staticmethod
     def get_rect(*args):
         """Get all points in the described rectangle, inclusive"""
+        if args == (None,):
+            return []
         rect = Rect(args)
         rect.normalize()
         return [(x, y) for x in xrange(rect.x, rect.x+rect.w)
