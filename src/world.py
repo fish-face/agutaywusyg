@@ -167,6 +167,14 @@ class World:
             elif e.key == pygame.K_t:
                 self.pick_target(self.talk)
 
+            elif e.key == pygame.K_s:
+                mm = self.player.map_memory[self.level]
+                for y in range(self.level.height):
+                    row = mm[y]
+                    for x in range(self.level.width):
+                        row[x] = self.level[(x,y)]
+                self.renderer.render_level(self)
+
             elif newloc != self.player.location:
                 if self.can_move_to(self.player, newloc):
                     self.player.location = newloc
