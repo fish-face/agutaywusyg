@@ -156,10 +156,12 @@ class World:
 
             elif e.key == pygame.K_0:
                 self.renderer.tiles.scale = 1
+                self.renderer.center_view(self)
                 self.renderer.render_level(self)
 
             elif e.key == pygame.K_9:
                 self.renderer.tiles.scale = 1/4.0
+                self.renderer.center_view(self)
                 self.renderer.render_level(self)
 
             elif e.key == pygame.K_t:
@@ -181,9 +183,11 @@ class World:
             pass
         if e.button == 4:
             self.renderer.tiles.scale *= 1.1
+            self.renderer.center_view(self)
             self.renderer.render_level(self)
         elif e.button == 5:
             self.renderer.tiles.scale *= 0.9
+            self.renderer.center_view(self)
             self.renderer.render_level(self)
 
         return False

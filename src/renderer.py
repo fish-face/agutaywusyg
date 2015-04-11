@@ -22,6 +22,23 @@ class Renderer:
         self.font = pygame.font.SysFont('Deja Vu Sans Mono', 12)
         self.title_font = pygame.font.SysFont('Deja Vu Sans Mono', 18)
         self.centre = ()
+        self.view = None
+
+    def center_view(self, world):
+        w = self.level_surf.get_width()
+        h = self.level_surf.get_height()
+        tw = self.tiles.tile_width
+        th = self.tiles.tile_height
+
+        player_x = world.player.location[0]
+        player_y = world.player.location[1]
+        player_view = pygame.Rect(0, 0, self.view_w * w, self.view_w * h)
+        player_view.center = (player_x * tw, player_y * th)
+        player_view.clamp_ip(0, 0, world.level.width * tw, world.level.height * th)
+
+        self.view = pygame.Rect(0, 0, w, h)
+        self.view.center = player_view.center
+        self.view.clamp_ip(0, 0, world.level.width * tw, world.level.height * th)
 
     def render(self, world, surface):
         surface.fill((0, 0, 0))
@@ -64,20 +81,35 @@ class Renderer:
         player_view = pygame.Rect(0, 0, self.view_w * w, self.view_w * h)
         player_view.center = (player_x * tw, player_y * th)
 
-        if not self.centre:
-            self.centre = player_view.center
+        player_view.clamp_ip(0, 0, level.width * tw, level.height * th)
+        if not self.view:
+            self.center_view(world)
 
-        view = pygame.Rect(0, 0, w, h)
-        view.center = self.centre
+        if player_view.right > self.view.right:
+            self.view.right = player_view.right
+        elif player_view.left < self.view.left:
+            self.view.left = player_view.left
+
+        if player_view.bottom > self.view.bottom:
+            self.view.bottom = player_view.bottom
+        elif player_view.top < self.view.top:
+            self.view.top = player_view.top
+
+        view = self.view
+        #if not self.centre:
+        #    self.centre = player_view.center
+
+        #view = pygame.Rect(0, 0, w, h)
+        #view.center = self.centre
 
         # Centre view on player
-        if not view.contains(player_view):
-            view.left = min(view.left, player_view.left)
-            view.right = max(view.right, player_view.right)
-            view.top = min(view.top, player_view.top)
-            view.bottom = max(view.bottom, player_view.bottom)
+        #if not view.contains(player_view):
+        #    view.left = min(view.left, player_view.left)
+        #    view.right = max(view.right, player_view.right)
+        #    view.top = min(view.top, player_view.top)
+        #    view.bottom = max(view.bottom, player_view.bottom)
 
-            self.centre = view.center
+        #    self.centre = view.center
 
         surface.fill((0,0,0))
         # Calculate visible tiles
