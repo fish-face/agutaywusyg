@@ -60,7 +60,7 @@ class FortressGenerator(Generator):
         self.width = random.randint(self.size*0.4, self.size*0.6) * 2
         self.height = random.randint(self.size*0.4, self.size*0.6) * 2
         self.orientation = random.randint(0,3)
-        self.corridor_size = random.randint(self.size*0.4, self.size*0.6)
+        self.corridor_size = random.randint(self.size*0.3, self.size*0.5)
         self.room_size = random.randint(4, 6)
         self.randomness = 0#random.randint(0, 4)
         self.reflect_axis = HORIZONTAL
@@ -126,10 +126,17 @@ class FortressGenerator(Generator):
 
             collisions = new.collidelistall(self.rooms[:-1])
             for i in collisions:
-                print self.rooms[i].rect
-                overlap = set(self.get_outline(new.rect, False)) & set(self.get_outline(self.rooms[i].rect, False))
-                for p in overlap:
-                    new.openings.add(p)
+                #overlap = set(self.get_outline(new.rect, False)) & set(self.get_outline(self.rooms[i].rect, False))
+                other_outline = self.get_outline(self.rooms[i].rect, False)
+                for p in self.get_outline(new.rect, False):
+                    if p in other_outline:
+                        new.openings.add(p)
+                    elif self.reflect_axis == HORIZONTAL and p[0] > self.reflect_centre:
+                        new.openings.add(p)
+                    elif self.reflect_axis == VERTICAL and p[1] > self.reflect_centre:
+                        new.openings.add(p)
+                #for p in overlap:
+                #    new.openings.add(p)
         if new and (not self.sanctum_accessible or random.random() < 0.8):
             length = max(new.w, new.h)
             branchpoint = (random.randint(5, length) + random.randint(5, length))/2
@@ -253,7 +260,7 @@ class FortressGenerator(Generator):
 
         self.rooms.append(room)
 
-    def grow_room(self, room, growing, max_size):
+    def grow_room(self, room, growing, max_size, pad_v=0, pad_h=0):
         """Tries to grow a room in the specified direction
 
         Returns whether the growth succeeded"""
@@ -271,35 +278,31 @@ class FortressGenerator(Generator):
                 width += 1
                 if room.w <= 1:
                     collision = None
-                elif height > 1:
-                    collision = Rect(room.x, room.y+1, 1, room.h-2)
                 else:
-                    collision = Rect(room.x, room.y, 1, 1)
+                    collision = Rect(room.x-pad_h, room.y+1-pad_v,
+                                     1+pad_h, max(1, room.h+2*pad_v-2))
             elif d == RIGHT:
                 width += 1
                 if room.w <= 1:
                     collision = None
-                elif height > 1:
-                    collision = Rect(room.right-1, room.y+1, 1, room.h-2)
                 else:
-                    collision = Rect(room.right-1, room.y, 1, 1)
+                    collision = Rect(room.right-1-pad_h, room.y+1,
+                                 1+pad_h, max(1, room.h+2*pad_v-2))
             elif d == DOWN:
                 height += 1
                 if room.h <= 1:
                     collision = None
-                elif width > 1:
-                    collision = Rect(room.x+1, room.bottom-1, room.w-2, 1)
                 else:
-                    collision = Rect(room.x, room.bottom-1, 1, 1)
+                    collision = Rect(room.x+1-pad_h, room.bottom-1,
+                                 max(1, room.w-2+2*pad_h), 1+pad_v)
             elif d == UP:
                 top -= 1
                 height += 1
                 if room.h <= 1:
                     collision = None
-                elif width > 1:
-                    collision = Rect(room.x+1, room.y, room.w-2, 1)
                 else:
-                    collision = Rect(room.x, room.y, 1, 1)
+                    collision = Rect(room.x+1-pad_h, room.y-pad_v,
+                                 max(1, room.w-2+2*pad_h), 1+pad_v)
             if collision is not None:
                 building_collisions = collision.collidelistall([r.rect for r in self.rooms])
             else:
@@ -310,6 +313,7 @@ class FortressGenerator(Generator):
                 room.top = top
                 room.height = height
             else:
+                #print room.rect, collision, building_collisions, (set(Generator.get_rect(collision)) - self.interior_space)
                 growing[d] = False
 
 
