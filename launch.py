@@ -11,7 +11,7 @@ sys.path.append(os.path.join('.', 'src'))
 
 import world
 
-PROFILE = False
+PROFILE = True
 
 if __name__=='__main__':
     pygame.init()
