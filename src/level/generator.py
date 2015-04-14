@@ -158,14 +158,30 @@ class Generator:
                 outline += [(shape.right-1, y) for y in xrange(shape.top+1, shape.bottom-1)]
                 outline += [(x, shape.top) for x in xrange(shape.left+1, shape.right-1)]
         else:
-            try:
-                if len(shape) == 4:
-                    outline += [(shape[0], y) for y in xrange(shape[1], shape[3])]
-                    outline += [(x, shape[3]) for x in xrange(shape[0], shape[2])]
-                    outline += [(shape[2], y) for y in xrange(shape[3], shape[1], -1)]
-                    outline += [(x, shape[1]) for x in xrange(shape[2], shape[0], -1)]
-            except TypeError:
-                raise TypeError('Don\'t know how to make an outline for the given shape.')
+            if eight:
+                outline += [(x, y) for x, y in shape if
+                            (x+1, y) not in shape or
+                            (x-1, y) not in shape or
+                            (x, y+1) not in shape or
+                            (x, y-1) not in shape or
+                            (x+1, y+1) not in shape or
+                            (x+1, y-1) not in shape or
+                            (x-1, y+1) not in shape or
+                            (x-1, y-1) not in shape]
+            else:
+                outline += [(x, y) for x, y in shape if
+                            (x+1, y) not in shape or
+                            (x-1, y) not in shape or
+                            (x, y+1) not in shape or
+                            (x, y-1) not in shape]
+            # try:
+            #     if len(shape) == 4:
+            #         outline += [(shape[0], y) for y in xrange(shape[1], shape[3])]
+            #         outline += [(x, shape[3]) for x in xrange(shape[0], shape[2])]
+            #         outline += [(shape[2], y) for y in xrange(shape[3], shape[1], -1)]
+            #         outline += [(x, shape[1]) for x in xrange(shape[2], shape[0], -1)]
+            # except TypeError:
+            #     raise TypeError('Don\'t know how to make an outline for the given shape.')
 
         return outline
         #else:

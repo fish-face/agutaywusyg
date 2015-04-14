@@ -6,30 +6,38 @@ from collections import defaultdict
 
 from level import TerrainInfo, Region, floor, wall
 from generator import Generator
+from shape import ArbitraryShape
 from castle import BuildingGraph
 from objects import Door
 from constants import LEFT, RIGHT, UP, DOWN, HORIZONTAL, VERTICAL, is_horizontal
 
-import util
+from util import pathfinding
 
 grass = TerrainInfo('v', 'grass', (3,0), False, False)
 window = TerrainInfo('o', 'window', (0,1), True, False)
 path = TerrainInfo(u'·', 'path', (2,0), False, False)
 
+TOP_CENTRE, TOP, SIDE, BOTTOM, BOTTOM_CENTRE = range(5)
+PLAIN, WIDE, ANTEROOM = range(3)
+
 class Room(object):
     def __init__(self, *args, **kwargs):
-        kw = {'drawn' : True, 'connect': True, 'parent': None}
+        kw = {'drawn' : True, 'connect': True, 'parent': None, 'reflect': False}
         kw.update(kwargs)
         self.rect = Rect(args)
         self.drawn = kw['drawn']
         self.connect = kw['connect']
         self.parent = kw['parent']
+        self.reflect = kw['reflect']
         self.openings = set()
+        self.doors = set()
 
-    def draw(self, gen, reflect=True):
+    def draw(self, gen):
         gen.fill_rect(self.rect, floor)
         gen.draw_points(set(gen.get_outline(self.rect)) - self.openings, wall)
-        if reflect:
+        for p in self.doors:
+            Door(p, level=gen.level)
+        if self.reflect:
             refl = gen.reflect_rect(self.rect, gen.reflect_axis, gen.reflect_centre)
             gen.fill_rect(refl, floor)
             gen.draw_points(set(gen.get_outline(refl)) - set(gen.reflect(p, gen.reflect_axis, gen.reflect_centre) for p in self.openings), wall)
@@ -52,15 +60,18 @@ class Room(object):
         else:
             object.__setattr__(self, name, value)
 
+    def __str__(self):
+        return 'Room %s' % (self.rect,)
+
 
 class FortressGenerator(Generator):
     def __init__(self, level):
         Generator.__init__(self, level)
-        self.size = 50
+        self.size = 80
         self.width = random.randint(self.size*0.4, self.size*0.6) * 2
         self.height = random.randint(self.size*0.4, self.size*0.6) * 2
         self.orientation = random.randint(0,3)
-        self.corridor_size = random.randint(self.size*0.3, self.size*0.5)
+        self.corridor_size = random.randint(self.size*0.2, self.size*0.3)
         self.room_size = random.randint(4, 6)
         self.randomness = 0#random.randint(0, 4)
         self.reflect_axis = HORIZONTAL
@@ -73,14 +84,18 @@ class FortressGenerator(Generator):
                      self.width/2+1, self.height-2)
         # Fill with grass
         #self.fill_rect(-self.width/2-2, 0, self.width+5, self.height, grass)
+        self.fill_rect(space, grass)
+        self.interior_rect = space
         self.interior_space = set(self.get_rect(space))
+        self.mirrored_space = set(self.get_rect(space) + self.get_rect(self.reflect_rect(space, self.reflect_axis, self.reflect_centre)))
         self.fixed_rooms = [Rect(-1,0,3,self.height)]
 
         # Create buildings
         self.corridors = []
         self.rooms = []
+        self.shapes = []
         self.add_sanctum(0, self.corridor_size*2)
-        self.add_corridors(-1, self.room_size, DOWN)
+        #self.add_corridors(-1, self.room_size, DOWN)
         #self.add_corridor(Rect(-1,self.room_size/2,3,self.corridor_size), 1, VERTICAL, False, False)
 
         for room in self.rooms:
@@ -89,6 +104,10 @@ class FortressGenerator(Generator):
             #self.draw_points(self.get_outlines([room.rect]), wall)
             if room.width == 1 or room.height == 1:
                 self.draw_points(self.get_rect(room.rect), grass)
+
+        for shape in self.shapes:
+            shape.draw(self, floor, wall)
+
         #for door in graph.doors:
         #    self.draw(door, floor)
         #    Door(door, level=self.level)
@@ -101,6 +120,66 @@ class FortressGenerator(Generator):
         self.rooms.append(self.sanctum)
         self.rooms.append(inner)
         self.sanctum_accessible = False
+
+        # Decide the (primary) connection
+        entrance_loc = random.choice((TOP_CENTRE, TOP, SIDE, BOTTOM, BOTTOM_CENTRE))
+        if entrance_loc == TOP_CENTRE:
+            x, y = self.sanctum.midtop
+            d = UP
+        elif entrance_loc == TOP:
+            x = random.randint(self.sanctum.left+1, -2)
+            y = self.sanctum.top
+            d = UP
+        elif entrance_loc == SIDE:
+            x = self.sanctum.left
+            y = random.randint(self.sanctum.top+1, self.sanctum.bottom-2)
+            d = LEFT
+        elif entrance_loc == BOTTOM:
+            x = random.randint(self.sanctum.left+1, -2)
+            y = self.sanctum.bottom - 1
+            d = DOWN
+        elif entrance_loc == BOTTOM_CENTRE:
+            x, y = self.sanctum.midbottom
+            y -= 1
+            d = DOWN
+
+        # Pick a connection style
+        entrance_style = random.choice((PLAIN, WIDE, ANTEROOM))
+        entrance_style = PLAIN
+        sanctum_outline = self.get_outline(self.sanctum.rect, False)
+
+        #entrance = Room(x-1, y-1, 3, 3)
+        if is_horizontal(d):
+            entrance = Room(x, y-1, 1, 3)
+        else:
+            entrance = Room(x-1, y, 3, 1)
+        if entrance_style == PLAIN:
+            growth = [False] * 4
+            growth[d] = True
+            while sum(growth):
+                self.grow_room(entrance, growth, self.room_size+1)
+            if max(entrance.w, entrance.h) < 3:
+                raise ValueError('Entrance Room failed to grow')
+            for p in self.get_outline(entrance.rect, False):
+                if p in sanctum_outline:
+                    entrance.openings.add(p)
+                    entrance.doors.add(p)
+            x, y = self.coords_in_dir(x, y, d, max(entrance.size)-1)
+            entrance.openings.add((x, y))
+            entrance.doors.add((x, y))
+        elif entrance_style == WIDE:
+            pass
+
+        self.rooms.append(entrance)
+        space = self.mirrored_space - set(self.get_rect(self.sanctum.rect.inflate(2*self.room_size, 2*self.room_size)))
+        self.connect_with_corridors(0, 1, x, y, space)
+
+    def connect_with_corridors(self, x1, y1, x2, y2, space):
+        graph = pathfinding.ObstacleGrid(self.interior_rect, self.interior_space-space)
+        path = pathfinding.pathfind(graph, (x1, y1), (x2, y2), True, (x1, y1+1))
+        path = set(path)
+        self.expand(path)
+        self.shapes.append(ArbitraryShape(path))
 
     def add_corridors(self, x, y, d, n=None, parent=None, seek_sanctum=True):
         max_depth = 5
@@ -180,7 +259,7 @@ class FortressGenerator(Generator):
 
 
     def add_corridor(self, rect, direction=None, both_sides=True, symmetry=None):
-        room = Room(rect)
+        room = Room(rect, reflect=True)
         if room.w > 3 and room.h > 3:
             pass
         else:
@@ -250,7 +329,7 @@ class FortressGenerator(Generator):
 
 
     def add_room(self, rect):
-        room = Room(rect)
+        room = Room(rect, reflect=True)
         if room.w > 0 and room.h > 0:
             pass
         else:
@@ -260,18 +339,18 @@ class FortressGenerator(Generator):
 
         self.rooms.append(room)
 
-    def grow_room(self, room, growing, max_size, pad_v=0, pad_h=0):
+    def grow_room(self, room, growing, max_size, pad_v=0, pad_h=0, space=None):
         """Tries to grow a room in the specified direction
 
         Returns whether the growth succeeded"""
+        space = space if space is not None else self.interior_space
         for d, grow in enumerate(growing):
             if not grow:
                 continue
             if (((d == LEFT or d == RIGHT) and room.w > max_size) or
                 ((d == UP or d == DOWN) and room.h > max_size)):
-                if (self.randomness == 0 or random.randint(0,self.randomness) > 0):
-                    growing[d] = False
-                    continue
+                growing[d] = False
+                continue
             left, top, width, height = room.x, room.y, room.w, room.h
             if d == LEFT:
                 left -= 1
@@ -307,13 +386,13 @@ class FortressGenerator(Generator):
                 building_collisions = collision.collidelistall([r.rect for r in self.rooms])
             else:
                 building_collisions = []
-            if not (set(Generator.get_rect(collision)) - self.interior_space) and len(building_collisions) == 0:
+            if not (set(Generator.get_rect(collision)) - space) and len(building_collisions) == 0:
                 room.left = left
                 room.width = width
                 room.top = top
                 room.height = height
             else:
-                #print room.rect, collision, building_collisions, (set(Generator.get_rect(collision)) - self.interior_space)
+                print room.rect, collision, d, building_collisions, (set(Generator.get_rect(collision)) - space)
                 growing[d] = False
 
 
