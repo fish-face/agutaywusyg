@@ -43,7 +43,7 @@ class PriorityQueue:
         return heapq.heappop(self.elements)[1]
 
 
-def dijkstra(graph, start, end, early_exit=True, straighten=False, next=None):
+def dijkstra(graph, start, end, early_exit=True, straighten=False, next_node=None):
     """
     Create and return a dijkstra map
     @type straighten: bool
@@ -58,37 +58,48 @@ def dijkstra(graph, start, end, early_exit=True, straighten=False, next=None):
     frontier.push(start, 0)
     predecessor = {}
     cost = {}
-    predecessor[start] = (0, 0) # Doesn't really make sense but provides values for px, py
+    predecessor[start] = (0, 0)  # Doesn't really make sense but provides values for px, py
     cost[start] = 0
 
-    if next:
-        predecessor[next] = start
-        cost[next] = graph.cost(start, next)
-        frontier.push(next, cost[next])
+    if next_node:
+        predecessor[next_node] = start
+        cost[next_node] = graph.cost(start, next_node)
+        frontier.push(next_node, cost[next_node])
+
+    # Reduce member lookups
+    neighbour_func = graph.neighbours
+    cost_func = graph.cost
+    pop = frontier.pop
+    push = frontier.push
 
     while frontier:
-        current = frontier.pop()
+        current = pop()
         if current == end and early_exit:
             break
 
         cx, cy = current
         px, py = predecessor[current]
 
-        for next in graph.neighbours(current):
+        for next_node in neighbour_func(current):
             if straighten:
                 prev_dx, prev_dy = cx - px, cy - py
-                dx, dy = next[0] - cx, next[1] - cy
+                dx, dy = next_node[0] - cx, next_node[1] - cy
                 direction_change_cost = 0.001 if dx != prev_dx or dy != prev_dy else 0
             else:
                 direction_change_cost = 0
             # new_cost = cost[current] + graph.cost(current, next) + direction_change_cost
             new_cost = cost[current] + 1 + direction_change_cost
-            if next not in cost or new_cost < cost[next]:
-                cost[next] = new_cost
-                frontier.push(next, new_cost)
-                predecessor[next] = current
+            if next_node not in cost or new_cost < cost[next_node]:
+                cost[next_node] = new_cost
+                push(next_node, new_cost)
+                predecessor[next_node] = current
 
     return predecessor, cost
+
+
+class NoPathError(ValueError):
+    pass
+
 
 def pathfind(graph, start, goal, straight=True, next=None):
     """
@@ -100,9 +111,11 @@ def pathfind(graph, start, goal, straight=True, next=None):
     @param next: (int, int) : As for start. Tries to pre-seed the straightening heuristic.
     @return: list of [(int, int)]
     """
-    predecessor, cost = dijkstra(graph, start, goal, False, straight, next)
-    # return get_path(graph, cost, start, goal)
-    return get_path(predecessor, start, goal)
+    predecessor, cost = dijkstra(graph, start, goal, True, straight, next)
+    try:
+        return get_path(predecessor, start, goal)
+    except NoPathError:
+        raise ValueError('No path exists between %s and %s in the supplied graph' % (start, goal))
 
 def get_path(predecessor, start, goal):
     """
@@ -119,7 +132,7 @@ def get_path(predecessor, start, goal):
             current = predecessor[current]
             path.append(current)
     except KeyError:
-        pass
+        raise NoPathError('No path exists in the supplied predecessor map')
 
     path.reverse()
 
