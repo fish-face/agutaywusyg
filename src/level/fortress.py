@@ -6,25 +6,28 @@ from collections import defaultdict
 
 from level import TerrainInfo, Region, floor, wall
 from generator import Generator
-from shape import ArbitraryShape
+from shape import ArbitraryShape, RectShape
 from castle import BuildingGraph
 from objects import Door
 from constants import LEFT, RIGHT, UP, DOWN, HORIZONTAL, VERTICAL, is_horizontal
 
 from util import pathfinding
 
-grass = TerrainInfo('v', 'grass', (3,0), False, False)
-window = TerrainInfo('o', 'window', (0,1), True, False)
-path = TerrainInfo(u'·', 'path', (2,0), False, False)
+grass = TerrainInfo('v', 'grass', (3, 0), False, False)
+window = TerrainInfo('o', 'window', (0, 1), True, False)
+path = TerrainInfo(u'·', 'path', (2, 0), False, False)
 
 TOP_CENTRE, TOP, SIDE, BOTTOM, BOTTOM_CENTRE = range(5)
 PLAIN, WIDE, ANTEROOM = range(3)
 
-class Room(object):
+
+class Room(RectShape):
     def __init__(self, *args, **kwargs):
-        kw = {'drawn' : True, 'connect': True, 'parent': None, 'reflect': False}
+        self.rect = None
+        kw = {'drawn': True, 'connect': True, 'parent': None, 'reflect': False}
         kw.update(kwargs)
-        self.rect = Rect(args)
+        rect = Rect(args)
+        super(Room, self).__init__(rect)
         self.drawn = kw['drawn']
         self.connect = kw['connect']
         self.parent = kw['parent']
@@ -32,15 +35,16 @@ class Room(object):
         self.openings = set()
         self.doors = set()
 
-    def draw(self, gen):
-        gen.fill_rect(self.rect, floor)
-        gen.draw_points(set(gen.get_outline(self.rect)) - self.openings, wall)
+    def draw(self, gen, fill, stroke):
+        super(Room, self).draw(gen, fill, stroke)
+        # gen.fill_rect(self.rect, fill)
+        # gen.draw_points(set(gen.get_outline(self.rect)) - self.openings, stroke)
         for p in self.doors:
             Door(p, level=gen.level)
-        if self.reflect:
-            refl = gen.reflect_rect(self.rect, gen.reflect_axis, gen.reflect_centre)
-            gen.fill_rect(refl, floor)
-            gen.draw_points(set(gen.get_outline(refl)) - set(gen.reflect(p, gen.reflect_axis, gen.reflect_centre) for p in self.openings), wall)
+            # if self.reflect:
+            # refl = gen.reflect_rect(self.rect, gen.reflect_axis, gen.reflect_centre)
+            #     gen.fill_rect(refl, fill)
+            #     gen.draw_points(set(gen.get_outline(refl)) - set(gen.reflect(p, gen.reflect_axis, gen.reflect_centre) for p in self.openings), stroke)
 
     def __getattr__(self, name):
         # A room isn't necessarily a rectangle, but expose the associated
@@ -80,45 +84,47 @@ class FortressGenerator(Generator):
 
     def generate(self):
         # Calculate valid space
-        space = Rect(-self.width/2, 1,
-                     self.width/2+1, self.height-2)
+        space = Rect(-self.width / 2, 1,
+                     self.width / 2 + 1, self.height - 2)
         # Fill with grass
-        #self.fill_rect(-self.width/2-2, 0, self.width+5, self.height, grass)
+        # self.fill_rect(-self.width/2-2, 0, self.width+5, self.height, grass)
         self.fill_rect(space, grass)
         self.interior_rect = space
         self.interior_space = set(self.get_rect(space))
-        self.mirrored_space = set(self.get_rect(space) + self.get_rect(self.reflect_rect(space, self.reflect_axis, self.reflect_centre)))
-        self.fixed_rooms = [Rect(-1,0,3,self.height)]
+        self.mirrored_space = set(
+            self.get_rect(space) + self.get_rect(self.reflect_rect(space, self.reflect_axis, self.reflect_centre)))
+        self.fixed_rooms = [Rect(-1, 0, 3, self.height)]
 
         # Create buildings
         self.corridors = []
-        self.rooms = []
+        # self.rooms = []
         self.shapes = []
-        self.add_sanctum(0, self.corridor_size*2)
-        #self.add_corridors(-1, self.room_size, DOWN)
-        #self.add_corridor(Rect(-1,self.room_size/2,3,self.corridor_size), 1, VERTICAL, False, False)
+        self.add_sanctum(0, self.corridor_size * 2)
+        self.add_corridors(-1, self.room_size, DOWN)
+        # self.add_corridor(Rect(-1,self.room_size/2,3,self.corridor_size), 1, VERTICAL, False, False)
 
-        for room in self.rooms:
-            room.draw(self)
-            #self.fill_rect(room.rect, floor)
-            #self.draw_points(self.get_outlines([room.rect]), wall)
-            if room.width == 1 or room.height == 1:
-                self.draw_points(self.get_rect(room.rect), grass)
+        # for room in self.rooms:
+        #     room.draw(self, floor, wall)
+        #     # self.fill_rect(room.rect, floor)
+        #     # self.draw_points(self.get_outlines([room.rect]), wall)
+        #     if room.width == 1 or room.height == 1:
+        #         self.draw_points(self.get_rect(room.rect), grass)
 
         for shape in self.shapes:
             shape.draw(self, floor, wall)
+            shape.mirror(self.reflect_axis, self.reflect_centre).draw(self, floor, wall)
 
-        #for door in graph.doors:
-        #    self.draw(door, floor)
-        #    Door(door, level=self.level)
+            # for door in graph.doors:
+            #    self.draw(door, floor)
+            #    Door(door, level=self.level)
 
     def add_sanctum(self, x, y):
-        size = int(1.5*self.room_size)
-        self.sanctum = Room(x-size, y-size, 2*size+1, 2*size+1)
-        size = self.room_size-1
-        inner = Room(x-size, y-size, size*2+1, size*2+1)
-        self.rooms.append(self.sanctum)
-        self.rooms.append(inner)
+        size = int(1.5 * self.room_size)
+        self.sanctum = Room(x - size, y - size, 2 * size + 1, 2 * size + 1)
+        size = self.room_size - 1
+        inner = Room(x - size, y - size, size * 2 + 1, size * 2 + 1)
+        self.shapes.append(self.sanctum)
+        self.shapes.append(inner)
         self.sanctum_accessible = False
 
         # Decide the (primary) connection
@@ -127,15 +133,15 @@ class FortressGenerator(Generator):
             x, y = self.sanctum.midtop
             d = UP
         elif entrance_loc == TOP:
-            x = random.randint(self.sanctum.left+1, -2)
+            x = random.randint(self.sanctum.left + 1, -2)
             y = self.sanctum.top
             d = UP
         elif entrance_loc == SIDE:
             x = self.sanctum.left
-            y = random.randint(self.sanctum.top+1, self.sanctum.bottom-2)
+            y = random.randint(self.sanctum.top + 1, self.sanctum.bottom - 2)
             d = LEFT
         elif entrance_loc == BOTTOM:
-            x = random.randint(self.sanctum.left+1, -2)
+            x = random.randint(self.sanctum.left + 1, -2)
             y = self.sanctum.bottom - 1
             d = DOWN
         elif entrance_loc == BOTTOM_CENTRE:
@@ -148,40 +154,47 @@ class FortressGenerator(Generator):
         entrance_style = PLAIN
         sanctum_outline = self.get_outline(self.sanctum.rect, False)
 
-        #entrance = Room(x-1, y-1, 3, 3)
+        # entrance = Room(x-1, y-1, 3, 3)
         if is_horizontal(d):
-            entrance = Room(x, y-1, 1, 3)
+            entrance = Room(x, y - 1, 1, 3)
         else:
-            entrance = Room(x-1, y, 3, 1)
+            entrance = Room(x - 1, y, 3, 1)
         if entrance_style == PLAIN:
             growth = [False] * 4
             growth[d] = True
             while sum(growth):
-                self.grow_room(entrance, growth, self.room_size+1)
+                self.grow_room(entrance, growth, self.room_size + 1)
             if max(entrance.w, entrance.h) < 3:
                 raise ValueError('Entrance Room failed to grow')
             for p in self.get_outline(entrance.rect, False):
                 if p in sanctum_outline:
-                    entrance.openings.add(p)
+                    entrance.outline_gaps.add(p)
                     entrance.doors.add(p)
-            x, y = self.coords_in_dir(x, y, d, max(entrance.size)-1)
-            entrance.openings.add((x, y))
+            x, y = self.coords_in_dir(x, y, d, max(entrance.size) - 1)
+            entrance.outline_gaps.add((x, y))
             entrance.doors.add((x, y))
+            x, y = self.coords_in_dir(x, y, d, 1)
         elif entrance_style == WIDE:
             pass
 
-        self.rooms.append(entrance)
-        space = self.mirrored_space - set(self.get_rect(self.sanctum.rect.inflate(2*self.room_size, 2*self.room_size)))
-        self.connect_with_corridors(0, 1, x, y, space)
+        self.shapes.append(entrance)
+        space = self.mirrored_space - set(self.get_rect(self.sanctum.rect.inflate(2 * self.room_size, 2 * self.room_size)))
+        self.connect_with_corridor(0, 1, x, y, space, {(0, 0)} | entrance.inner_edges)
+        self.main_corridor = self.shapes[-1]
 
-    def connect_with_corridors(self, x1, y1, x2, y2, space):
-        graph = pathfinding.ObstacleGrid(self.interior_rect, self.interior_space-space)
-        path = pathfinding.pathfind(graph, (x1, y1), (x2, y2), True, (x1, y1+1))
-        path = set(path)
+    def connect_with_corridor(self, x1, y1, x2, y2, space, join):
+        # Pathfind through the space
+        graph = pathfinding.ObstacleGrid(self.interior_rect, self.interior_space - space)
+        path = set(pathfinding.pathfind(graph, (x1, y1), (x2, y2), True, (x1, y1 + 1)))
+
+        # The path is 1 tile wide; expand it
         self.expand(path)
-        self.shapes.append(ArbitraryShape(path))
+        shape = ArbitraryShape(path)
+        # Remove places where the corridor should join other things
+        shape.add_gaps(shape.inner_edges & join)
+        self.shapes.append(shape)
 
-    def add_corridors(self, x, y, d, n=None, parent=None, seek_sanctum=True):
+    def add_corridors(self, x, y, d, n=None, parent=None):
         max_depth = 5
         branch_twice = 0.5
 
@@ -196,67 +209,73 @@ class FortressGenerator(Generator):
         else:
             w = 3
             h = 1
-        new = self.add_corridor(Rect(x, y, w, h), d, False, False)
-        if new:
-            if is_horizontal(d):
-                new.openings.add((x, y+1))
-            else:
-                new.openings.add((x+1, y))
+        if n == max_depth:
+            new = Room(Rect(x, y, 3, self.sanctum.y - y - 5 - 3))
+        else:
+            new = self.add_corridor(Rect(x, y, w, h), d, False, False)
 
-            collisions = new.collidelistall(self.rooms[:-1])
-            for i in collisions:
-                #overlap = set(self.get_outline(new.rect, False)) & set(self.get_outline(self.rooms[i].rect, False))
-                other_outline = self.get_outline(self.rooms[i].rect, False)
-                for p in self.get_outline(new.rect, False):
-                    if p in other_outline:
-                        new.openings.add(p)
-                    elif self.reflect_axis == HORIZONTAL and p[0] > self.reflect_centre:
-                        new.openings.add(p)
-                    elif self.reflect_axis == VERTICAL and p[1] > self.reflect_centre:
-                        new.openings.add(p)
-                #for p in overlap:
-                #    new.openings.add(p)
+            if new:
+                if is_horizontal(d):
+                    new.openings.add((x, y + 1))
+                else:
+                    new.openings.add((x + 1, y))
+
+                collisions = new.collidelist(self.shapes[:-1])
+                for i in collisions:
+                    # overlap = set(self.get_outline(new.rect, False)) & set(self.get_outline(self.shapes[i].rect, False))
+                    other_outline = self.shapes[i].inner_edges
+                    for p in new.inner_edges:
+                        if p in other_outline:
+                            new.outline_gaps.add(p)
+                        elif self.reflect_axis == HORIZONTAL and p[0] > self.reflect_centre:
+                            new.outline_gaps.add(p)
+                        elif self.reflect_axis == VERTICAL and p[1] > self.reflect_centre:
+                            new.outline_gaps.add(p)
+                            #for p in overlap:
+                            #    new.openings.add(p)
         if new and (not self.sanctum_accessible or random.random() < 0.8):
             length = max(new.w, new.h)
-            branchpoint = (random.randint(5, length) + random.randint(5, length))/2
+            branchpoint = (random.randint(5, length) + random.randint(5, length)) / 2
             x2, y2 = self.coords_in_dir(x, y, d, branchpoint)
-            if seek_sanctum:
-                # Maybe make one branch, but always seek the sanctum
-                if is_horizontal(d):
-                    if y2 > self.sanctum.bottom:
-                        self.add_corridors(x2, y2, UP, n-1, new)
-                        if random.random() < branch_twice:
-                            self.add_corridors(x2, y2+2, DOWN, n-1, new, False)
-                    else:
-                        self.add_corridors(x2, y2+2, DOWN, n-1, new)
-                        if random.random() < branch_twice:
-                            self.add_corridors(x2, y2, UP, n-1, new, False)
-                else:
-                    if x2 < self.sanctum.left:
-                        self.add_corridors(x2+2, y2, RIGHT, n-1, new)
-                        if random.random() < branch_twice:
-                            self.add_corridors(x2, y2, LEFT, n-1, new, False)
-                    else:
-                        self.add_corridors(x2, y2, LEFT, n-1, new)
-                        if random.random() < branch_twice:
-                            self.add_corridors(x2+2, y2, RIGHT, n-1, new, False)
+            # if seek_sanctum:
+            #     # Maybe make one branch, but always seek the sanctum
+            #     if is_horizontal(d):
+            #         if y2 > self.sanctum.bottom:
+            #             self.add_corridors(x2, y2, UP, n - 1, new)
+            #             if random.random() < branch_twice:
+            #                 self.add_corridors(x2, y2 + 2, DOWN, n - 1, new)
+            #         else:
+            #             self.add_corridors(x2, y2 + 2, DOWN, n - 1, new)
+            #             if random.random() < branch_twice:
+            #                 self.add_corridors(x2, y2, UP, n - 1, new)
+            #     else:
+            #         if x2 < self.sanctum.left:
+            #             self.add_corridors(x2 + 2, y2, RIGHT, n - 1, new)
+            #             if random.random() < branch_twice:
+            #                 self.add_corridors(x2, y2, LEFT, n - 1, new)
+            #         else:
+            #             self.add_corridors(x2, y2, LEFT, n - 1, new)
+            #             if random.random() < branch_twice:
+            #                 self.add_corridors(x2 + 2, y2, RIGHT, n - 1, new)
+            # else:
+            if n == max_depth:
+                branch = (0, 1)
             else:
-                branch = random.choice(((1,), (0,), (0,1)))
-                if is_horizontal(d):
-                    if 0 in branch:
-                        self.add_corridors(x2, y2, UP, n-1, new)
-                    if 1 in branch:
-                        self.add_corridors(x2, y2+2, DOWN, n-1, new)
-                else:
-                    if 0 in branch:
-                        self.add_corridors(x2, y2, LEFT, n-1, new)
-                    if 1 in branch:
-                        self.add_corridors(x2+2, y2, RIGHT, n-1, new)
+                branch = random.choice(((1,), (0,), (0, 1)))
+            if is_horizontal(d):
+                if 0 in branch:
+                    self.add_corridors(x2, y2, UP, n - 1, new)
+                if 1 in branch:
+                    self.add_corridors(x2, y2 + 2, DOWN, n - 1, new)
+            else:
+                if 0 in branch:
+                    self.add_corridors(x2, y2, LEFT, n - 1, new)
+                if 1 in branch:
+                    self.add_corridors(x2 + 2, y2, RIGHT, n - 1, new)
 
         if n == max_depth:
             # Add rooms
             pass
-
 
     def add_corridor(self, rect, direction=None, both_sides=True, symmetry=None):
         room = Room(rect, reflect=True)
@@ -267,13 +286,14 @@ class FortressGenerator(Generator):
                 direction = random.choice((UP, DOWN, LEFT, RIGHT))
             growth = [False] * 4
             growth[direction] = True
+            space = self.interior_space - reduce(set.union, (s.points for s in self.shapes))
             while sum(growth):
-                self.grow_room(room, growth, self.corridor_size)
+                self.grow_room(room, growth, self.corridor_size, space=space)
 
         if max(room.w, room.h) <= 5:
             return None
 
-        self.rooms.append(room)
+        self.shapes.append(room)
 
         return room
 
@@ -337,7 +357,7 @@ class FortressGenerator(Generator):
             while sum(growth):
                 self.grow_room(room, growth, self.room_size)
 
-        self.rooms.append(room)
+        self.shapes.append(room)
 
     def grow_room(self, room, growing, max_size, pad_v=0, pad_h=0, space=None):
         """Tries to grow a room in the specified direction
@@ -348,7 +368,7 @@ class FortressGenerator(Generator):
             if not grow:
                 continue
             if (((d == LEFT or d == RIGHT) and room.w > max_size) or
-                ((d == UP or d == DOWN) and room.h > max_size)):
+                    ((d == UP or d == DOWN) and room.h > max_size)):
                 growing[d] = False
                 continue
             left, top, width, height = room.x, room.y, room.w, room.h
@@ -358,32 +378,32 @@ class FortressGenerator(Generator):
                 if room.w <= 1:
                     collision = None
                 else:
-                    collision = Rect(room.x-pad_h, room.y+1-pad_v,
-                                     1+pad_h, max(1, room.h+2*pad_v-2))
+                    collision = Rect(room.x - pad_h, room.y + 1 - pad_v,
+                                     1 + pad_h, max(1, room.h + 2 * pad_v - 2))
             elif d == RIGHT:
                 width += 1
                 if room.w <= 1:
                     collision = None
                 else:
-                    collision = Rect(room.right-1-pad_h, room.y+1,
-                                 1+pad_h, max(1, room.h+2*pad_v-2))
+                    collision = Rect(room.right - 1 - pad_h, room.y + 1,
+                                     1 + pad_h, max(1, room.h + 2 * pad_v - 2))
             elif d == DOWN:
                 height += 1
                 if room.h <= 1:
                     collision = None
                 else:
-                    collision = Rect(room.x+1-pad_h, room.bottom-1,
-                                 max(1, room.w-2+2*pad_h), 1+pad_v)
+                    collision = Rect(room.x + 1 - pad_h, room.bottom - 1,
+                                     max(1, room.w - 2 + 2 * pad_h), 1 + pad_v)
             elif d == UP:
                 top -= 1
                 height += 1
                 if room.h <= 1:
                     collision = None
                 else:
-                    collision = Rect(room.x+1-pad_h, room.y-pad_v,
-                                 max(1, room.w-2+2*pad_h), 1+pad_v)
+                    collision = Rect(room.x + 1 - pad_h, room.y - pad_v,
+                                     max(1, room.w - 2 + 2 * pad_h), 1 + pad_v)
             if collision is not None:
-                building_collisions = collision.collidelistall([r.rect for r in self.rooms])
+                building_collisions = collision.collidelistall([r.rect for r in self.shapes if isinstance(r, Room)])
             else:
                 building_collisions = []
             if not (set(Generator.get_rect(collision)) - space) and len(building_collisions) == 0:

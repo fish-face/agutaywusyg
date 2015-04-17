@@ -37,9 +37,16 @@ class Generator:
     @staticmethod
     def reflect(p, axis, centre):
         if axis == HORIZONTAL:
-            return (centre*2 - p[0] - 1, p[1])
+            return centre*2 - p[0] - 1, p[1]
         else:
-            return (p[0], centre*2 - p[1] - 1)
+            return p[0], centre*2 - p[1] - 1
+
+    @staticmethod
+    def reflect_points(points, axis, centre):
+        if axis == HORIZONTAL:
+            return [(int(centre*2) - p[0] - 1, p[1]) for p in points]
+        else:
+            return [(p[0], int(centre*2) - p[1] - 1) for p in points]
 
     @staticmethod
     def coords_in_dir(x, y, d, l):
@@ -217,7 +224,15 @@ class Generator:
                        for y in xrange(rect.y, rect.y+rect.h)]
 
     @staticmethod
-    def expand(points, amount=1):
-        for i in xrange(amount):
-            for p in set(points):
-                points |= set(((p[0]+1, p[1]), (p[0]-1, p[1]), (p[0], p[1]-1), (p[0], p[1]+1)))
+    def expand(points, amount=1, eight=True):
+        if eight:
+            for i in xrange(amount):
+                for p in set(points):
+                    x, y = p
+                    points |= {(x + 1, y), (x - 1, y), (x, y - 1), (x, y + 1),
+                               (x + 1, y + 1), (x + 1, y - 1), (x - 1, y + 1), (x - 1, y - 1)}
+        else:
+            for i in xrange(amount):
+                for p in set(points):
+                    x, y = p
+                    points |= {(x + 1, y), (x - 1, y), (x, y - 1), (x, y + 1)}
